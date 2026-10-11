@@ -309,6 +309,14 @@ public class ProfileListPatch : AbstractPatch
     {
         // (url, request, sessionID)
         __state = SessionLock.Enter(__2, typeof(ProfileListPatch));
+        try
+        {
+            __state?.BeforeClientLoadsProfiles();
+        }
+        catch (Exception ex)
+        {
+            SessionManager.Instance?.LogError($"profile list (before): {ex}");
+        }
     }
 
     [PatchFinalizer]

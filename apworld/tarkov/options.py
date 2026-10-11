@@ -113,6 +113,34 @@ class TrapPercentage(Range):
     default = 10
 
 
+class StartingKit(Choice):
+    """Give your PMC a random starting kit, rolled from the seed: a weapon with magazines and matching ammo,
+    body armor, a rig, a backpack, meds, food and money (see Starting Kit Quality).
+
+    off: the normal starting stash of your SPT profile's edition.
+    extra: the kit arrives as a message on top of the normal starting stash.
+    replace: your starting stash and gear are removed and the kit is all you start with (the knife, pockets and
+    secure container stay). Only applies to a brand-new profile; an older profile gets the kit on top instead."""
+    display_name = "Starting Kit"
+    option_off = 0
+    option_extra = 1
+    option_replace = 2
+    default = 0
+
+
+class StartingKitQuality(Choice):
+    """How good the random starting kit is.
+
+    scrappy: a cheap gun, light armor, little money.
+    standard: a mid-range gun, class 3 armor and a helmet now and then.
+    geared: a good gun with better ammo, class 4 armor, a helmet and more money."""
+    display_name = "Starting Kit Quality"
+    option_scrappy = 0
+    option_standard = 1
+    option_geared = 2
+    default = 1
+
+
 class TarkovDeathLink(DeathLink):
     """When your PMC dies in raid, everyone with DeathLink dies too, and the reverse.
     Receiving a death while in raid needs the optional client plugin; it is ignored outside raids."""
@@ -131,4 +159,6 @@ class TarkovOptions(PerGameCommonOptions):
     lock_flea_market: LockFleaMarket
     level_pacing: LevelPacing
     trap_percentage: TrapPercentage
+    starting_kit: StartingKit
+    starting_kit_quality: StartingKitQuality
     death_link: TarkovDeathLink

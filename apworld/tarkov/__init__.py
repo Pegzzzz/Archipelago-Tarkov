@@ -304,4 +304,6 @@ class TarkovWorld(World):
             "death_link": bool(self.options.death_link.value),
             "starting_map": self.start_map,
             "starting_traders": self.start_traders,
+            "starting_kit": self.options.starting_kit.current_key,
+            "starting_kit_quality": self.options.starting_kit_quality.current_key,
         }

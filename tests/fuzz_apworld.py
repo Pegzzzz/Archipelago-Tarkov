@@ -33,6 +33,8 @@ def random_tarkov(rng):
         "level_pacing": rng.choice(["relaxed", "normal", "fast"]),
         "trap_percentage": rng.choice([0, 10, 50]),
         "death_link": rng.choice([True, False]),
+        "starting_kit": rng.choice(["off", "extra", "replace"]),
+        "starting_kit_quality": rng.choice(["scrappy", "standard", "geared"]),
         "accessibility": rng.choice(["full", "minimal"]),
         "progression_balancing": rng.choice([0, 50, 99]),
     }

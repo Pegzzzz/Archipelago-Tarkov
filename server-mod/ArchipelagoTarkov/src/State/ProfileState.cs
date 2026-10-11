@@ -50,6 +50,10 @@ public sealed class ProfileState
     [JsonPropertyName("goalSent")] public bool GoalSent { get; set; }
     [JsonPropertyName("collectorWarned")] public bool CollectorWarned { get; set; }
 
+    // Random starting kit: "extra" or "replace" while it waits to be given, then StartingKitGiven.
+    [JsonPropertyName("startingKitPending")] public string? StartingKitPending { get; set; }
+    [JsonPropertyName("startingKitGiven")] public bool StartingKitGiven { get; set; }
+
     // Profile changes made by the server that the game client has not seen yet. SPT overwrites
     // experience, trader standing and health with the client's copy when a raid ends, so these are
     // added back into that copy until the client next receives the server's values (any inventory
@@ -126,6 +130,8 @@ public sealed class ProfileState
         BoundSlot = null;
         BoundSlotName = null;
         CollectorWarned = false;
+        StartingKitPending = null;
+        StartingKitGiven = false;
         // Pending* are kept: they describe the SPT profile, not the multiworld.
         SlotData = null;
         SlotLocations.Clear();

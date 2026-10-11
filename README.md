@@ -18,6 +18,8 @@ SPT only. It has nothing to do with the official PvE or PvP modes and must never
 - **Goals:** a number of quests, Fence's *Collector* (Kappa), or extracting from every map.
 - **Items:** maps, traders, Flea Market access, experience, trader reputation, money, and crates of weapons, armor,
   medicine, ammo, keys, stims, barter goods and provisions. Traps: Fence Grudge, Exhaustion, Scav Cooldown.
+- **Random starting kit (optional):** a weapon with matching ammo and magazines, armor, rig, backpack, meds, food and
+  money rolled from the seed, on top of or instead of your starting stash, in three quality levels.
 - **DeathLink.**
 - **Logic that knows Tarkov:** quest prerequisites, the maps each quest's objectives need, trader loyalty and player
   level (estimated from how many maps you own), weapon parts for the Gunsmith quests, and a keycard for The Lab.
@@ -30,7 +32,7 @@ SPT only. It has nothing to do with the official PvE or PvP modes and must never
 
 ## Status
 
-First release (v1.0.0). Everything is tested against a real SPT 4.0.13 server and a real Archipelago server, with a
+Early release (v1.1.0). Everything is tested against a real SPT 4.0.13 server and a real Archipelago server, with a
 script that makes the same requests as the game client, but it hasn't had a full in-game playthrough yet. Please
 [open an issue](https://github.com/Pegzzzz/Archipelago-Tarkov/issues) with your newest `SPT\user\logs` file if
 something goes wrong.

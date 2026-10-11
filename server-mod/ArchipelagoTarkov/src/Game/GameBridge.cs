@@ -440,6 +440,90 @@ public class GameBridge(
 
     public List<Item> CreateMoney(string currencyTpl, int amount) => lootPools.CreateItem(new MongoId(currencyTpl), amount);
 
+    public List<Item> CreateStartingKit(string? quality, Random rng, out List<string> contents) =>
+        lootPools.CreateStartingKit(quality, rng, out contents);
+
+    /// <summary>A profile nobody has played yet: no experience and no quest taken.</summary>
+    public bool IsFreshProfile(string profileId)
+    {
+        var pmc = Pmc(profileId);
+        if (pmc?.Info is null)
+        {
+            return false;
+        }
+
+        var played = pmc.Quests?.Any(q => q.Status is QuestStatusEnum.Started or QuestStatusEnum.AvailableForFinish
+            or QuestStatusEnum.Success or QuestStatusEnum.Fail or QuestStatusEnum.FailRestartable) ?? false;
+        return (pmc.Info.Experience ?? 0) <= 0 && !played;
+    }
+
+    // Equipment slots a "replace" starting kit leaves alone (their contents are still emptied for the containers).
+    private static readonly HashSet<string> KeptEquipmentSlots = new(StringComparer.Ordinal)
+    {
+        "Scabbard", "SecuredContainer", "Pockets", "ArmBand", "Compass", "Dogtag", "SpecialSlot1", "SpecialSlot2", "SpecialSlot3",
+    };
+
+    /// <summary>
+    /// Empty the starting stash and take off the starting gear (the knife, pockets, secure container and special
+    /// slots stay, emptied). Only called just before the game client loads the profile, so the client never holds
+    /// items the server no longer has. Returns how many top-level items were removed.
+    /// </summary>
+    public int ClearStartingInventory(string profileId)
+    {
+        var inventory = Pmc(profileId)?.Inventory;
+        if (inventory?.Items is null || inventory.Stash is null || inventory.Equipment is null)
+        {
+            return 0;
+        }
+
+        var stash = inventory.Stash.Value.ToString();
+        var equipment = inventory.Equipment.Value.ToString();
+        var emptied = inventory.Items
+            .Where(i => i.ParentId == equipment && i.SlotId is "SecuredContainer" or "Pockets")
+            .Select(i => i.Id.ToString())
+            .ToHashSet();
+
+        var roots = inventory.Items.Where(i =>
+                i.ParentId == stash
+                || (i.ParentId == equipment && !KeptEquipmentSlots.Contains(i.SlotId ?? ""))
+                || (i.ParentId != null && emptied.Contains(i.ParentId)))
+            .Select(i => i.Id.ToString())
+            .ToList();
+
+        var children = inventory.Items.Where(i => i.ParentId != null).ToLookup(i => i.ParentId!);
+        var removed = new HashSet<string>();
+        var queue = new Queue<string>(roots);
+        while (queue.Count > 0)
+        {
+            var id = queue.Dequeue();
+            if (!removed.Add(id))
+            {
+                continue;
+            }
+
+            foreach (var child in children[id])
+            {
+                queue.Enqueue(child.Id.ToString());
+            }
+        }
+
+        inventory.Items.RemoveAll(i => removed.Contains(i.Id.ToString()));
+        if (inventory.FastPanel is not null)
+        {
+            foreach (var key in inventory.FastPanel.Where(kv => removed.Contains(kv.Value.ToString())).Select(kv => kv.Key).ToList())
+            {
+                inventory.FastPanel.Remove(key);
+            }
+        }
+
+        if (inventory.FavoriteItems is not null)
+        {
+            inventory.FavoriteItems = inventory.FavoriteItems.Where(f => !removed.Contains(f.ToString())).ToList();
+        }
+
+        return roots.Count;
+    }
+
     public List<Item> CreateCrate(string pool, int count, Random rng, out string description)
     {
         var items = lootPools.CreateFromPool(pool, count, rng, out var picked);

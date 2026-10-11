@@ -199,6 +199,13 @@ public sealed class ApSession
         InRaid = true;
         RaidMap = mapKey;
         RaidStarted = DateTime.UtcNow;
+        if (State.StartingKitPending == "replace")
+        {
+            // Never wipe a stash that has seen a raid: hand the kit over on top instead.
+            State.StartingKitPending = "extra";
+            _dirty = true;
+            Say("You started a raid before restarting the game, so your stash is kept. Your random starting kit comes as a message instead.");
+        }
         _deathCausedByLink = false;
         PendingDeathLinkKill = false;
         if (Active && mapKey != null && !IsMapUnlocked(mapKey))
@@ -264,6 +271,74 @@ public sealed class ApSession
     {
         InRaid = false;
         PendingDeathLinkKill = false;
+    }
+
+    /// <summary>
+    /// The game client is about to load the whole profile: the one safe moment to change the stash, because the
+    /// client takes the server's copy as it is. Used for the "replace" starting kit.
+    /// </summary>
+    public void BeforeClientLoadsProfiles()
+    {
+        if (State.StartingKitPending == "replace")
+        {
+            GiveStartingKit(clearInventory: true);
+            SaveAll();
+        }
+    }
+
+    private void PlanStartingKit()
+    {
+        var mode = State.SlotString("starting_kit");
+        if (State.StartingKitGiven || mode is not ("extra" or "replace"))
+        {
+            return;
+        }
+
+        if (mode == "replace" && !_game.IsFreshProfile(ProfileId))
+        {
+            mode = "extra";
+            Say("This profile has already been played, so its stash is kept. Your random starting kit comes as a message instead.");
+        }
+        else if (mode == "replace" && !Patches.PatchInstaller.IsReady(typeof(Patches.ProfileListPatch)))
+        {
+            mode = "extra";
+        }
+        else if (mode == "replace")
+        {
+            Say("Random starting kit: when you restart the game, your starting stash and gear are replaced by your kit " +
+                "(it arrives as a message from this contact). Restart before your first raid.");
+        }
+
+        State.StartingKitPending = mode;
+        _dirty = true;
+    }
+
+    private void GiveStartingKit(bool clearInventory)
+    {
+        var quality = State.SlotString("starting_kit_quality") ?? "standard";
+        try
+        {
+            // Build the kit before touching the stash, so a failure never leaves the player with nothing.
+            var rng = new Random(StableSeed(State.SeedName ?? "", -1, State.SlotId));
+            var items = _game.CreateStartingKit(quality, rng, out var contents);
+            var removed = clearInventory ? _game.ClearStartingInventory(ProfileId) : 0;
+            var intro = clearInventory
+                ? $"Your random starting kit ({quality}). Your old starting stash ({removed} items) was removed."
+                : $"Your random starting kit ({quality}).";
+            _game.SendItems(ProfileId, intro + "\n- " + string.Join("\n- ", contents), items);
+            EnqueueClientMessage("Your random starting kit has arrived in the messenger");
+            _log($"[Archipelago] starting kit for {ProfileId} ({quality}{(clearInventory ? ", replace" : "")}): {string.Join("; ", contents)}");
+        }
+        catch (Exception ex)
+        {
+            _log($"[Archipelago] could not build the starting kit for {ProfileId}: {ex}");
+            _chatLines.Add($"Could not build your random starting kit ({ex.Message}). Check the SPT server console.");
+        }
+
+        State.StartingKitPending = null;
+        State.StartingKitGiven = true;
+        _profileChanged = true;
+        _dirty = true;
     }
 
     /// <summary>The game client just loaded the whole profile (PMC and Scav), so it has seen every server-side change.</summary>
@@ -362,6 +437,11 @@ public sealed class ApSession
             if (!InRaid)
             {
                 ApplyDeferred();
+            }
+
+            if (State.StartingKitPending == "extra")
+            {
+                GiveStartingKit(clearInventory: false);
             }
 
             if (_game.EnforceLocks(ProfileId, _data, _unlockedTraders, FleaLocked))
@@ -608,6 +688,7 @@ public sealed class ApSession
         Say($"Connected to Archipelago as {State.Slot}. {State.Checked.Count}/{State.SlotLocations.Count} checks done.");
         if (_firstConnectOfGame)
         {
+            PlanStartingKit();
             Say("Your profile is now linked to this Archipelago game. Maps and traders you don't have yet are locked " +
                 "from now on. Restart the game once so the map list and trader screens update.");
             if (State.SlotString("goal") == "collector")

@@ -52,3 +52,19 @@ class TestEveryStartingMap(TarkovTestBase):
                                                          "set_rules", "connect_entrances", "generate_basic",
                                                          "pre_fill"))
                 del mw  # construction succeeding is the test for every map
+
+
+class TestStartingKit(TarkovTestBase):
+    options = {"starting_kit": "replace", "starting_kit_quality": "geared"}
+
+    def test_slot_data(self) -> None:
+        data = self.world.fill_slot_data()
+        self.assertEqual(data["starting_kit"], "replace")
+        self.assertEqual(data["starting_kit_quality"], "geared")
+
+
+class TestStartingKitDefault(TarkovTestBase):
+    def test_slot_data(self) -> None:
+        data = self.world.fill_slot_data()
+        self.assertEqual(data["starting_kit"], "off")
+        self.assertEqual(data["starting_kit_quality"], "standard")

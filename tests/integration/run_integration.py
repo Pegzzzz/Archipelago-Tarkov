@@ -47,6 +47,57 @@ for _e in DATA["extracts"]:
     LOC_IDS[_e["name"]] = _e["location_id"]
 
 TRADERS = {t["key"]: t["id"] for t in DATA["traders"]}
+_TEMPLATES = None
+
+
+def templates():
+    """SPT's item database, to check what the mod hands out."""
+    global _TEMPLATES
+    if _TEMPLATES is None:
+        _TEMPLATES = json.load(open(os.path.join(SPT, "SPT_Data", "database", "templates", "items.json")))
+    return _TEMPLATES
+
+
+def is_a(tpl, base):
+    items = templates()
+    for _ in range(30):
+        if tpl == base:
+            return True
+        tpl = items.get(tpl, {}).get("_parent")
+        if not tpl:
+            return False
+    return False
+
+
+def armor_class(tpl):
+    try:
+        return int(templates().get(tpl, {}).get("_props", {}).get("armorClass") or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+WEAPON, AMMO, MAGAZINE, ARMOR, VEST, HEADWEAR, BACKPACK = (
+    "5422acb9af1c889c16000029", "5485a8684bdc2da71d8b4567", "5448bc234bdc2d3c308b4569", "5448e54d4bdc2dcc718b4568",
+    "5448e5284bdc2dcb718b4567", "5a341c4086f77401f2541505", "5448e53e4bdc2d60728b4567")
+ROUBLES = "5449016a4bdc2d6f028b456f"
+
+
+def roots_of(items):
+    ids = {i["_id"] for i in items}
+    return [i for i in items if i.get("parentId") not in ids]
+
+
+def protection(item, items):
+    """Armor class of an armor item: its own or the best of its plates/inserts."""
+    best = armor_class(item["_tpl"])
+    stack = [item["_id"]]
+    while stack:
+        parent = stack.pop()
+        for child in items:
+            if child.get("parentId") == parent:
+                best = max(best, armor_class(child["_tpl"]))
+                stack.append(child["_id"])
+    return best
 RESULTS = []
 
 
@@ -118,6 +169,8 @@ def main():
     multidata = generate({
         "Runner": {"death_link": "true", "goal_quest_count": 5, "extracts_per_map": 2, "trap_percentage": 0},
         "Buddy": {},
+        "Kitted": {"starting_kit": "replace", "starting_kit_quality": "geared", "goal_quest_count": 5},
+        "Kitted2": {"starting_kit": "replace", "starting_kit_quality": "scrappy", "goal_quest_count": 5},
     }, os.path.join(WORK, "gen"), seed=12345)
     server = MultiServer(multidata, logfile=os.path.join(WORK, "multiserver.log"))
     watcher = buddy = None
@@ -226,7 +279,7 @@ def scenario(c: SptClient, server: MultiServer, watcher: Watcher, buddy: Watcher
         c.complete_quest(debut["id"])
         watcher.wait_checked(debut["location_id"], timeout=30)
         # the item at Debut might be ours; look for either the 'sent' or 'received' message
-        wait(lambda: any(("Buddy" in (m.get("text") or "") or "Received" in (m.get("text") or ""))
+        wait(lambda: any((" sent " in (m.get("text") or "") or "Received" in (m.get("text") or ""))
                          for m in c.bot_messages() if m["_id"] not in n),
              timeout=20, what="announcement")
     _()
@@ -278,6 +331,10 @@ def scenario(c: SptClient, server: MultiServer, watcher: Watcher, buddy: Watcher
         assert tpls and all(t == "5449016a4bdc2d6f028b456f" for t in tpls), tpls
         total = sum(i.get("upd", {}).get("StackObjectsCount", 1) for i in money[0]["items"]["data"])
         assert total == 100000, total
+        armor = [m for m in msgs if "Armor Crate" in m.get("text", "")][0]
+        piece = roots_of(armor["items"]["data"])[0]
+        assert any(is_a(piece["_tpl"], b) for b in (ARMOR, VEST, HEADWEAR)), piece
+        assert protection(piece, armor["items"]["data"]) > 0, "the armor crate must hold real armor"
         weapon = [m for m in msgs if "Weapon Crate" in m.get("text", "")][0]
         assert len(weapon["items"]["data"]) > 3, "weapon should be a full preset"
         for m in msgs:
@@ -635,6 +692,78 @@ def scenario(c: SptClient, server: MultiServer, watcher: Watcher, buddy: Watcher
             c.complete_quest(q["id"])
             watcher.wait_checked(q["location_id"], timeout=30)
         watcher.wait_for(lambda p: p.get("cmd") == "PrintJSON" and p.get("type") == "Goal", since=mark, timeout=40)
+    _()
+
+    @step("random starting kit (replace): stash and gear replaced when the game loads the profile")
+    def _():
+        k = SptClient()
+        k.register_and_login("kitted")
+        k.create_character("Kitted")
+        k.start_game()
+        stash_before = len(k.pmc()["Inventory"]["items"])
+        n = k.bot_ids()
+        k.say("connect 127.0.0.1:38281 Kitted")
+        k.wait_for_bot("Connected to Archipelago as Kitted", start_count=n, timeout=40)
+        k.wait_for_bot("starting stash and gear are replaced", start_count=n, timeout=10)
+        # the game restarts and loads the profile: that is when the stash is replaced
+        k.start_game()
+        pmc = k.pmc()
+        inv = pmc["Inventory"]
+        stash_items = [i for i in inv["items"] if i.get("parentId") == inv["stash"]]
+        assert not stash_items, f"{len(stash_items)} items left in the stash"
+        slots = {i["slotId"] for i in inv["items"] if i.get("parentId") == inv["equipment"]}
+        assert slots <= {"Scabbard", "SecuredContainer", "Pockets", "ArmBand", "Compass", "Dogtag"}, slots
+        assert len(inv["items"]) < stash_before
+        kit = wait(lambda: next((m for m in k.dialog() if "random starting kit (geared)" in (m.get("text") or "").lower()
+                                 and m.get("hasRewards")), None), timeout=20, what="kit message")
+        items = kit["items"]["data"]
+        roots = roots_of(items)
+        guns = [r for r in roots if is_a(r["_tpl"], WEAPON)]
+        assert len(guns) == 1, [r["_tpl"] for r in roots]
+        gun = templates()[guns[0]["_tpl"]]
+        caliber = gun["_props"].get("ammoCaliber")
+        ammo = [r for r in roots if is_a(r["_tpl"], AMMO)]
+        assert ammo and all(templates()[a["_tpl"]]["_props"]["Caliber"] == caliber for a in ammo), (caliber, ammo)
+        assert sum(a.get("upd", {}).get("StackObjectsCount", 1) for a in ammo) == 240
+        mags = [r for r in roots if is_a(r["_tpl"], MAGAZINE)]
+        if gun["_props"].get("ReloadMode") == "ExternalMagazine":
+            allowed = next(s for s in gun["_props"]["Slots"] if s["_name"] == "mod_magazine")["_props"]["filters"][0]["Filter"]
+            assert len(mags) == 3 and all(m["_tpl"] in allowed for m in mags), mags
+        body = [r for r in roots if is_a(r["_tpl"], ARMOR)]
+        assert len(body) == 1 and protection(body[0], items) == 4, [protection(b, items) for b in body]
+        helmets = [r for r in roots if is_a(r["_tpl"], HEADWEAR)]
+        assert len(helmets) == 1 and protection(helmets[0], items) > 0
+        assert [r for r in roots if is_a(r["_tpl"], VEST)] and [r for r in roots if is_a(r["_tpl"], BACKPACK)]
+        money = sum(r.get("upd", {}).get("StackObjectsCount", 1) for r in roots if r["_tpl"] == ROUBLES)
+        assert 300_000 <= money <= 600_000, money
+        # once only: a later profile load changes nothing
+        k.start_game()
+        assert len([m for m in k.dialog() if "your random starting kit (" in (m.get("text") or "").lower()]) == 1
+        assert len(k.pmc()["Inventory"]["items"]) == len(inv["items"])
+    _()
+
+    @step("random starting kit: a raid before restarting keeps the stash and sends the kit as a message")
+    def _():
+        k = SptClient()
+        k.register_and_login("kitted2")
+        k.create_character("Kittedtwo")
+        k.start_game()
+        def stash_count():
+            inv = k.pmc()["Inventory"]
+            return len([i for i in inv["items"] if i.get("parentId") == inv["stash"]])
+        before = stash_count()
+        n = k.bot_ids()
+        k.say("connect 127.0.0.1:38281 Kitted2")
+        k.wait_for_bot("starting stash and gear are replaced", start_count=n, timeout=40)
+        start = k.raid_start("Sandbox")
+        k.wait_for_bot("so your stash is kept", start_count=n, timeout=10)
+        kit = wait(lambda: next((m for m in k.dialog() if "random starting kit (scrappy)" in (m.get("text") or "").lower()
+                                 and m.get("hasRewards")), None), timeout=30, what="kit message")
+        k.raid_end(start["serverId"], "Left")
+        k.start_game()
+        assert stash_count() == before, "the stash must be kept"
+        money = sum(r.get("upd", {}).get("StackObjectsCount", 1) for r in roots_of(kit["items"]["data"]) if r["_tpl"] == ROUBLES)
+        assert 30_000 <= money <= 80_000, money
     _()
 
     @step("a game made with a different APWorld data version is refused")

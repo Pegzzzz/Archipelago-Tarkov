@@ -36,6 +36,12 @@ the **Archipelago** contact in your in-game messenger; open the chat and press "
 Traps: *Fence Grudge* (lowers Fence reputation), *Exhaustion* (drains energy and hydration) and *Scav Cooldown*
 (adds 20 minutes to your Scav cooldown).
 
+## Can I start with something different?
+
+Yes: `starting_kit` gives you a random kit rolled from the seed (a weapon with matching ammo and magazines, armor,
+a rig, a backpack, meds, food and money), either on top of your normal starting stash or instead of it.
+`starting_kit_quality` picks how good it is.
+
 ## What is the goal?
 
 One of:

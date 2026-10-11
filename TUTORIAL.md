@@ -3,7 +3,7 @@
 This guide takes you from a working SPT install to playing Tarkov in an Archipelago multiworld.
 Setting up the mod takes about 10 minutes.
 
-> **Status: first release (v1.0.0).** Everything is tested against a real SPT 4.0.13 server and a real Archipelago
+> **Status: early release (v1.1.0).** Everything is tested against a real SPT 4.0.13 server and a real Archipelago
 > server, with a script standing in for the game client. It hasn't had a full in-game playthrough yet, so expect rough
 > edges. Please report problems (see [Reporting problems](#reporting-problems)).
 
@@ -24,7 +24,7 @@ Setting up the mod takes about 10 minutes.
 
 From the latest release, download:
 
-- `ArchipelagoTarkov-1.0.0-SPT-4.0.13.zip` — the SPT server mod and the (optional) client plugin
+- `ArchipelagoTarkov-<version>-SPT-4.0.13.zip` — the SPT server mod and the (optional) client plugin
 - `tarkov.apworld` — teaches Archipelago about Tarkov
 - `Escape.from.Tarkov.yaml` — your settings file (GitHub swaps the spaces for dots; the name doesn't matter)
 
@@ -64,7 +64,7 @@ Your SPT folder should look like this (the names that matter):
 ## 3. Install the mod
 
 1. Close the game, the SPT launcher and the SPT server.
-2. Open `ArchipelagoTarkov-1.0.0-SPT-4.0.13.zip` and extract **both folders inside it** (`SPT` and `BepInEx`) into
+2. Open `ArchipelagoTarkov-<version>-SPT-4.0.13.zip` and extract **both folders inside it** (`SPT` and `BepInEx`) into
    your SPT folder (the one with `EscapeFromTarkov.exe`). Say **yes** if Windows asks to merge folders.
 3. Check that these two files exist:
    - `SPT\user\mods\ArchipelagoTarkov\ArchipelagoTarkov.dll` — the server mod (**required**)
@@ -122,6 +122,8 @@ Open `Escape.from.Tarkov.yaml` in a text editor (Notepad works).
 | `lock_flea_market` | `true` | The Flea Market is closed until you find *Flea Market Access* |
 | `level_pacing` | `normal` | How many maps the logic expects you to own before it asks for higher-level quests: `relaxed`, `normal` or `fast` |
 | `trap_percentage` | `10` | Percentage of filler items replaced by traps |
+| `starting_kit` | `off` | A random starting kit rolled from the seed (see [The random starting kit](#the-random-starting-kit)): `off`, `extra` (on top of your normal starting stash) or `replace` (instead of it) |
+| `starting_kit_quality` | `standard` | How good the kit is: `scrappy`, `standard` or `geared` |
 | `death_link` | `false` | When your PMC dies in raid, everyone with DeathLink dies, and the other way round |
 
 Short games: `goal_quest_count: 20`, `max_quest_level: 15` and `extracts_per_map: 1` make a game of a few evenings.
@@ -209,6 +211,28 @@ only while you're in raid, and only with the client plugin; out of raid it's jus
 Sadist*. *Colleagues - Part 3* is only offered while *Sadist* is in progress, and *Collector* needs it. The contact
 reminds you when it matters.
 
+### The random starting kit
+
+With `starting_kit` on, you get a random kit when you first link your profile. It's rolled from the seed, so
+everyone's is different:
+
+| | scrappy | standard | geared |
+|---|---|---|---|
+| Weapon | a cheap gun | a mid-range gun | a good gun |
+| Spare magazines (if the gun takes them) | 1 | 2 | 3 |
+| Matching ammo | 90 rounds, weaker | 150 rounds, mid | 240 rounds, better |
+| Body armor | class 2 | class 3 | class 4 |
+| Helmet | — | half the time | yes |
+| Rig and backpack | cheap | mid-range | better |
+| Meds / food | 2 / 1 | 3 / 2 | 5 / 2 |
+| Roubles | 30k–80k | 100k–250k | 300k–600k |
+
+- **`extra`:** the kit arrives as a message from the Archipelago contact. Your normal starting stash stays.
+- **`replace`:** when you restart the game after linking, your starting stash and gear are removed (the knife,
+  pockets and secure container stay) and the kit arrives as a message. Open it and press **Receive**, then gear up.
+  This only happens on a brand-new profile: if the profile was already played, or you start a raid before
+  restarting, your stash is kept and the kit comes on top instead.
+
 ---
 
 ## 9. Commands
@@ -250,7 +274,7 @@ Your Archipelago progress lives in `SPT\user\mods\ArchipelagoTarkov\profiles\`. 
 
 **The SPT console doesn't show "Archipelago for Tarkov loaded"**
 Check that `ArchipelagoTarkov.dll` is at `SPT\user\mods\ArchipelagoTarkov\ArchipelagoTarkov.dll`. The console lists
-every mod it loads (`Mod: Archipelago for Tarkov version: 1.0.0 ... loaded`); on an SPT version other than 4.0.13 it
+every mod it loads (`Mod: Archipelago for Tarkov version: 1.1.0 ... loaded`); on an SPT version other than 4.0.13 it
 shows an error about the mod's SPT version instead. Look for red lines mentioning Archipelago.
 
 **There's no Archipelago contact in the messenger**
