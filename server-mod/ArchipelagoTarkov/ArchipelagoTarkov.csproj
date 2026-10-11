@@ -1,0 +1,60 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Archipelago server mod for SPT 4.0.13.
+
+    Normal build (Windows/Linux with the .NET 9 SDK):
+      dotnet build -c Release -p:SptPath="C:\SPT"
+    SptPath must point at an SPT 4.0.13 install (the folder containing SPT.Server.exe or the SPT subfolder).
+
+    Offline build (no NuGet access): pass -p:OfflineRefs=<folder with .NET 9 framework dlls>
+  -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>ArchipelagoTarkov</AssemblyName>
+    <RootNamespace>ArchipelagoTarkov</RootNamespace>
+    <Version>1.0.0</Version>
+    <OutputType>Library</OutputType>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <Deterministic>true</Deterministic>
+    <SptLibDir Condition="Exists('$(SptPath)\SPT\SPTarkov.Server.Core.dll')">$(SptPath)\SPT</SptLibDir>
+    <SptLibDir Condition="'$(SptLibDir)' == ''">$(SptPath)</SptLibDir>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(OfflineRefs)' != ''">
+    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+    <NoStdLib>true</NoStdLib>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(OfflineRefs)' != ''">
+    <Reference Include="$(OfflineRefs)\*.dll" Private="false" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(OfflineRefs)' != ''">
+    <!-- The offline framework assemblies are runtime implementation assemblies; ignore their platform annotations. -->
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="$(SptLibDir)\SPTarkov.Server.Core.dll" Private="false" />
+    <Reference Include="$(SptLibDir)\SPTarkov.DI.dll" Private="false" />
+    <Reference Include="$(SptLibDir)\SPTarkov.Common.dll" Private="false" />
+    <Reference Include="$(SptLibDir)\SPTarkov.Reflection.dll" Private="false" />
+    <Reference Include="$(SptLibDir)\0Harmony.dll" Private="false" />
+    <Reference Include="$(SptLibDir)\SemanticVersioning.dll" Private="false" />
+    <Reference Include="$(SptLibDir)\Microsoft.Extensions.DependencyInjection.Abstractions.dll" Private="false" />
+    <Reference Include="$(SptLibDir)\Microsoft.Extensions.Logging.Abstractions.dll" Private="false" />
+  </ItemGroup>
+
+  <Target Name="CheckSptPath" BeforeTargets="ResolveAssemblyReferences" Condition="!Exists('$(SptLibDir)\SPTarkov.Server.Core.dll')">
+    <Error Text="SPT 4.0.13 not found. Build with -p:SptPath=&quot;&lt;your SPT folder&gt;&quot; (the folder containing SPT.Server.exe, or its parent)." />
+  </Target>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\apworld\tarkov\data\tarkov_data.json" LogicalName="ArchipelagoTarkov.tarkov_data.json" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Optional BepInEx client plugin for Archipelago for Tarkov (SPT 4.0.13).
+
+    Build:  dotnet build -c Release -p:SptPath="C:\SPT"
+    SptPath is your SPT folder (the one with EscapeFromTarkov.exe). The plugin only needs
+    BepInEx, Unity and spt-common at compile time; everything inside the game is reached by
+    reflection so a different game build can never stop it from loading.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <AssemblyName>ArchipelagoTarkov.Client</AssemblyName>
+    <RootNamespace>ArchipelagoTarkov.Client</RootNamespace>
+    <Version>1.0.0</Version>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <Deterministic>true</Deterministic>
+    <ManagedDir Condition="Exists('$(SptPath)\EscapeFromTarkov_Data\Managed')">$(SptPath)\EscapeFromTarkov_Data\Managed</ManagedDir>
+    <ManagedDir Condition="'$(ManagedDir)' == ''">$(SptPath)</ManagedDir>
+    <BepInExCore Condition="Exists('$(SptPath)\BepInEx\core')">$(SptPath)\BepInEx\core</BepInExCore>
+    <BepInExCore Condition="'$(BepInExCore)' == ''">$(SptPath)</BepInExCore>
+    <SptPlugins Condition="Exists('$(SptPath)\BepInEx\plugins\spt')">$(SptPath)\BepInEx\plugins\spt</SptPlugins>
+    <SptPlugins Condition="'$(SptPlugins)' == ''">$(SptPath)</SptPlugins>
+  </PropertyGroup>
+
+  <!-- Offline build on Linux: point at Mono's .NET Framework reference assemblies -->
+  <PropertyGroup Condition="'$(MonoRefs)' != ''">
+    <FrameworkPathOverride>$(MonoRefs)</FrameworkPathOverride>
+    <AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(MonoRefs)' != ''">
+    <Reference Include="$(MonoRefs)\Facades\netstandard.dll" Private="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="$(BepInExCore)\BepInEx.dll" Private="false" />
+    <Reference Include="$(ManagedDir)\UnityEngine.dll" Private="false" />
+    <Reference Include="$(ManagedDir)\UnityEngine.CoreModule.dll" Private="false" />
+    <Reference Include="$(ManagedDir)\UnityEngine.JSONSerializeModule.dll" Private="false" />
+    <Reference Include="$(SptPlugins)\spt-common.dll" Private="false" />
+  </ItemGroup>
+
+  <Target Name="CheckSptPath" BeforeTargets="ResolveAssemblyReferences" Condition="!Exists('$(BepInExCore)\BepInEx.dll')">
+    <Error Text="Game files not found. Build with -p:SptPath=&quot;&lt;your game folder&gt;&quot; (the folder containing EscapeFromTarkov.exe)." />
+  </Target>
+</Project>
