@@ -50,7 +50,7 @@ missable step (see the tutorial).
 | `client-plugin/ArchipelagoTarkov.Client/` | Optional BepInEx plugin: in-raid notifications and DeathLink kills (reaches the game by reflection) |
 | `tests/` | End-to-end suite (real SPT server + real MultiServer + scripted game client), generation fuzzer, plugin tests under Mono |
 | `tools/package.sh` | Builds the release files |
-| `.github/workflows/build.yml` | Builds everything, runs the APWorld tests, publishes a release on a `v*` tag |
+| `.github/workflows/build.yml` | Builds everything, runs the APWorld tests, and attaches the files to a release when one is published (or when run by hand with a release tag) |
 
 **Building**
 

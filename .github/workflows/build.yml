@@ -3,11 +3,16 @@ name: Build
 on:
   push:
     branches: ["**"]
-    tags: ["v*"]
+    tags: ["v*", "[0-9]*"]
   release:
     types: [published]
   pull_request:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Attach the built files to this existing release (its tag, e.g. 1.1.0). Leave empty to only build."
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -101,16 +106,12 @@ jobs:
           name: archipelago-tarkov
           path: dist/
 
-      # A v* tag, or publishing a release on GitHub, attaches the files above to that release.
-      - name: Publish GitHub release
-        if: startsWith(github.ref, 'refs/tags/v')
+      # Publishing a release (any tag), pushing a version tag, or running this workflow by hand with a
+      # release tag attaches the files above to that release. The release's own title and notes are kept.
+      - name: Attach the files to the release
+        if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/') || inputs.release_tag
         uses: softprops/action-gh-release@v2
         with:
-          name: Archipelago for Tarkov ${{ github.ref_name }}
-          body: |
-            For **SPT 4.0.13**. Install guide: [TUTORIAL.md](https://github.com/${{ github.repository }}/blob/main/TUTORIAL.md)
-
-            - `ArchipelagoTarkov-*-SPT-4.0.13.zip`: extract into your SPT folder (server mod + optional client plugin)
-            - `tarkov.apworld`: install in Archipelago 0.6.4+
-            - `Escape.from.Tarkov.yaml`: options template
+          tag_name: ${{ inputs.release_tag || github.event.release.tag_name || github.ref_name }}
           files: dist/*
+          fail_on_unmatched_files: true
