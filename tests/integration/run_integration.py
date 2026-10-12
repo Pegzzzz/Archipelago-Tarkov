@@ -82,6 +82,13 @@ WEAPON, AMMO, MAGAZINE, ARMOR, VEST, HEADWEAR, BACKPACK = (
 ROUBLES = "5449016a4bdc2d6f028b456f"
 
 
+def deliveries(client):
+    """Archipelago item messages in the System chat (trader unlock notes left out)."""
+    return [m for m in client.dialog(SYSTEM_DIALOG, 11)
+            if m.get("hasRewards") and (m.get("text") or "").startswith("Archipelago")
+            and "is now available" not in (m.get("text") or "")]
+
+
 def roots_of(items):
     ids = {i["_id"] for i in items}
     return [i for i in items if i.get("parentId") not in ids]
@@ -313,7 +320,7 @@ def scenario(c: SptClient, server: MultiServer, watcher: Watcher, buddy: Watcher
 
     @step("money and crates arrive as messages with attachments")
     def _():
-        before = len(c.dialog())
+        before = len(deliveries(c))
         server.command("/send Runner Roubles (100,000)")
         server.command("/send Runner Weapon Crate")
         server.command("/send Runner Armor Crate")
@@ -322,7 +329,7 @@ def scenario(c: SptClient, server: MultiServer, watcher: Watcher, buddy: Watcher
         server.command("/send Runner Key Crate")
 
         def got():
-            msgs = [m for m in c.dialog() if m.get("hasRewards")]
+            msgs = deliveries(c)
             return len(msgs) >= 6 and msgs
         msgs = wait(got, timeout=40, what="6 item messages")
         money = [m for m in msgs if "Roubles (100,000)" in m.get("text", "")]
@@ -340,6 +347,9 @@ def scenario(c: SptClient, server: MultiServer, watcher: Watcher, buddy: Watcher
         for m in msgs:
             roots = [i for i in m["items"]["data"] if i.get("slotId") == "main"]
             assert roots, m.get("text")
+            assert m.get("type") in (7, "SystemMessage") and m.get("uid") == SYSTEM_DIALOG, (m.get("type"), m.get("uid"))
+        assert not [m for m in c.dialog() if m.get("hasRewards")], "no attachments on Archipelago chat messages"
+        c.wait_for_bot("Collect it in your System messages", timeout=10)
     _()
 
     @step("experience outside a raid is applied right away")
@@ -556,13 +566,13 @@ def scenario(c: SptClient, server: MultiServer, watcher: Watcher, buddy: Watcher
         state_path = os.path.join(MOD_DIR, "profiles", f"{c.session}.json")
         wait(lambda: (lambda st: st["delivered"] == len(st["received"]))(json.load(open(state_path))), what="deliveries settled")
         time.sleep(6)
-        with_items = len([m for m in c.dialog() if m.get("hasRewards")])
+        with_items = len(deliveries(c))
         received_lines = sum(t.count("Received") for t in c.bot_texts())
         before_ids = c.bot_ids()
         spt_restart(os.path.join(WORK, "spt2.log"))
         c.wait_for_bot("Connected to Archipelago as Runner", start_count=before_ids, timeout=60)
         time.sleep(8)
-        assert len([m for m in c.dialog() if m.get("hasRewards")]) == with_items
+        assert len(deliveries(c)) == with_items
         assert sum(t.count("Received") for t in c.bot_texts()) == received_lines
         assert trader_unlocked(c, "skier") and not trader_unlocked(c, "peacekeeper")
         state = json.load(open(os.path.join(MOD_DIR, "profiles", f"{c.session}.json")))
@@ -609,6 +619,41 @@ def scenario(c: SptClient, server: MultiServer, watcher: Watcher, buddy: Watcher
         json.dump(prof, open(path, "w"))
         spt_restart(os.path.join(WORK, "spt3.log"))
         watcher.wait_checked(LOC_IDS["Hideout - Generator Level 1"], timeout=60)
+    _()
+
+    @step("items stuck in Archipelago chat messages (1.1.0 and older) are sent again as System messages")
+    def _():
+        n = c.bot_ids()
+        sh(f"{BIN}/spt-stop.sh")
+        path = os.path.join(SPT, "user", "profiles", f"{c.session}.json")
+        prof = json.load(open(path))
+        dialog = prof["dialogues"][BOT_ID]
+        stash = "6a0000000000000000000001"
+        dialog["messages"].append({
+            "_id": "6a0000000000000000000002", "uid": BOT_ID, "type": 1, "dt": int(time.time()) - 3600,
+            "text": "Roubles (25,000) from Buddy (an old delivery)", "hasRewards": True, "rewardCollected": False,
+            "maxStorageTime": 31536000,
+            "items": {"stash": stash, "data": [{"_id": "6a0000000000000000000003", "_tpl": ROUBLES, "parentId": stash,
+                                                 "slotId": "main", "upd": {"StackObjectsCount": 24680}}]},
+        })
+        dialog["attachmentsNew"] = 1
+        json.dump(prof, open(path, "w"))
+        state_file = os.path.join(MOD_DIR, "profiles", f"{c.session}.json")
+        st = json.load(open(state_file))
+        st["mailVersion"] = 0  # as saved by 1.1.0
+        json.dump(st, open(state_file, "w"))
+        spt_restart(os.path.join(WORK, "spt5.log"))
+        c.wait_for_bot("sent again as System messages", start_count=n, timeout=60)
+        resent = wait(lambda: next((m for m in deliveries(c) if "an old delivery" in (m.get("text") or "")), None),
+                      timeout=20, what="re-sent message")
+        total = sum(i.get("upd", {}).get("StackObjectsCount", 1) for i in resent["items"]["data"] if i["_tpl"] == ROUBLES)
+        assert total == 24680, total
+        old = next(m for m in c.dialog() if m["_id"] == "6a0000000000000000000002")
+        assert not old.get("hasRewards") and not (old.get("items") or {}).get("data"), old
+        # only once
+        spt_restart(os.path.join(WORK, "spt6.log"))
+        time.sleep(8)
+        assert len([m for m in deliveries(c) if "an old delivery" in (m.get("text") or "")]) == 1
     _()
 
     @step("a profile cannot be reused for a different multiworld; reset works")
@@ -714,8 +759,8 @@ def scenario(c: SptClient, server: MultiServer, watcher: Watcher, buddy: Watcher
         slots = {i["slotId"] for i in inv["items"] if i.get("parentId") == inv["equipment"]}
         assert slots <= {"Scabbard", "SecuredContainer", "Pockets", "ArmBand", "Compass", "Dogtag"}, slots
         assert len(inv["items"]) < stash_before
-        kit = wait(lambda: next((m for m in k.dialog() if "random starting kit (geared)" in (m.get("text") or "").lower()
-                                 and m.get("hasRewards")), None), timeout=20, what="kit message")
+        kit = wait(lambda: next((m for m in deliveries(k) if "random starting kit (geared)" in (m.get("text") or "").lower()),
+                                None), timeout=20, what="kit message")
         items = kit["items"]["data"]
         roots = roots_of(items)
         guns = [r for r in roots if is_a(r["_tpl"], WEAPON)]
@@ -738,7 +783,7 @@ def scenario(c: SptClient, server: MultiServer, watcher: Watcher, buddy: Watcher
         assert 300_000 <= money <= 600_000, money
         # once only: a later profile load changes nothing
         k.start_game()
-        assert len([m for m in k.dialog() if "your random starting kit (" in (m.get("text") or "").lower()]) == 1
+        assert len([m for m in deliveries(k) if "your random starting kit (" in (m.get("text") or "").lower()]) == 1
         assert len(k.pmc()["Inventory"]["items"]) == len(inv["items"])
     _()
 
@@ -757,8 +802,8 @@ def scenario(c: SptClient, server: MultiServer, watcher: Watcher, buddy: Watcher
         k.wait_for_bot("starting stash and gear are replaced", start_count=n, timeout=40)
         start = k.raid_start("Sandbox")
         k.wait_for_bot("so your stash is kept", start_count=n, timeout=10)
-        kit = wait(lambda: next((m for m in k.dialog() if "random starting kit (scrappy)" in (m.get("text") or "").lower()
-                                 and m.get("hasRewards")), None), timeout=30, what="kit message")
+        kit = wait(lambda: next((m for m in deliveries(k) if "random starting kit (scrappy)" in (m.get("text") or "").lower()),
+                                None), timeout=30, what="kit message")
         k.raid_end(start["serverId"], "Left")
         k.start_game()
         assert stash_count() == before, "the stash must be kept"
@@ -791,7 +836,7 @@ def scenario(c: SptClient, server: MultiServer, watcher: Watcher, buddy: Watcher
     @step("server log has no errors from the mod")
     def _():
         bad = []
-        for log in ("spt1.log", "spt2.log", "spt3.log", "spt4.log", "spt5.log"):
+        for log in ("spt1.log", "spt2.log", "spt3.log", "spt4.log", "spt5.log", "spt6.log"):
             p = os.path.join(WORK, log)
             if os.path.exists(p):
                 for line in open(p, errors="replace"):

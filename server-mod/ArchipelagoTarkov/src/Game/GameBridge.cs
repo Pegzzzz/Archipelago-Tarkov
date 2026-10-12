@@ -91,6 +91,10 @@ public class GameBridge(
         }
     }
 
+    /// <summary>
+    /// Send items to the player. The game only lets you take attachments from system messages (that's also how
+    /// SPT's own "give" command delivers), so items always go out as a system message; never from a chat contact.
+    /// </summary>
     public void SendItems(string profileId, string text, List<Item> items)
     {
         if (items.Count == 0)
@@ -99,7 +103,44 @@ public class GameBridge(
             return;
         }
 
-        mailSendService.SendUserMessageToPlayer(new MongoId(profileId), ChatBotInfo, text, items, MailStorageSeconds);
+        mailSendService.SendSystemMessageToPlayer(new MongoId(profileId), "Archipelago: " + text, items, MailStorageSeconds);
+    }
+
+    /// <summary>
+    /// Versions up to 1.1.0 attached items to messages from the Archipelago contact, which the game can't collect.
+    /// Send whatever is still attached to those messages again as system messages, and take it off the old ones.
+    /// Returns how many messages were moved.
+    /// </summary>
+    public int ResendStuckAttachments(string profileId)
+    {
+        var full = profileHelper.GetFullProfile(new MongoId(profileId));
+        if (full?.DialogueRecords is null || !full.DialogueRecords.TryGetValue(ChatBotId, out var dialog) || dialog.Messages is null)
+        {
+            return 0;
+        }
+
+        var stuck = dialog.Messages
+            .Where(m => m.HasRewards == true && m.RewardCollected != true && (m.Items?.Data?.Count ?? 0) > 0)
+            .OrderBy(m => m.DateTime ?? 0)
+            .ToList();
+        foreach (var message in stuck)
+        {
+            var items = message.Items!.Data!.ToList();
+            mailSendService.SendSystemMessageToPlayer(new MongoId(profileId), "Archipelago (sent again): " + (message.Text ?? ""), items,
+                MailStorageSeconds);
+            message.Items = null;
+            message.HasRewards = false;
+            message.RewardCollected = false;
+            message.MaxStorageTime = null;
+            message.Text = (message.Text ?? "") + "\n(Moved to your System messages.)";
+        }
+
+        if (stuck.Count > 0)
+        {
+            dialog.AttachmentsNew = 0;
+        }
+
+        return stuck.Count;
     }
 
     /// <summary>

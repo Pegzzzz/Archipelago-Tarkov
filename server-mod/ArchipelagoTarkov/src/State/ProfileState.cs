@@ -54,6 +54,9 @@ public sealed class ProfileState
     [JsonPropertyName("startingKitPending")] public string? StartingKitPending { get; set; }
     [JsonPropertyName("startingKitGiven")] public bool StartingKitGiven { get; set; }
 
+    /// <summary>2 once items stuck in Archipelago chat messages (versions up to 1.1.0) have been re-sent.</summary>
+    [JsonPropertyName("mailVersion")] public int MailVersion { get; set; }
+
     // Profile changes made by the server that the game client has not seen yet. SPT overwrites
     // experience, trader standing and health with the client's copy when a raid ends, so these are
     // added back into that copy until the client next receives the server's values (any inventory

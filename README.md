@@ -24,7 +24,7 @@ SPT only. It has nothing to do with the official PvE or PvP modes and must never
 - **Logic that knows Tarkov:** quest prerequisites, the maps each quest's objectives need, trader loyalty and player
   level (estimated from how many maps you own), weapon parts for the Gunsmith quests, and a keycard for The Lab.
 - **Plays from the in-game messenger:** link your profile with `connect server:port slot` to the *Archipelago*
-  contact. Items arrive as messages, with attachments for money and crates.
+  contact. Money, crates and the starting kit arrive in the System messages, ready to receive.
 - **Works with other SPT mods:** tested with Fika, SVM, WTT-CommonLib and a custom trader. When another mod replaces
   part of SPT, the mod hooks the replacement.
 - **Safe to stop and restart:** the SPT server and the Archipelago server can both restart at any time without
@@ -32,7 +32,7 @@ SPT only. It has nothing to do with the official PvE or PvP modes and must never
 
 ## Status
 
-Early release (v1.1.0). Everything is tested against a real SPT 4.0.13 server and a real Archipelago server, with a
+Early release (v1.1.1). Everything is tested against a real SPT 4.0.13 server and a real Archipelago server, with a
 script that makes the same requests as the game client, but it hasn't had a full in-game playthrough yet. Please
 [open an issue](https://github.com/Pegzzzz/Archipelago-Tarkov/issues) with your newest `SPT\user\logs` file if
 something goes wrong.

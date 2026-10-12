@@ -30,8 +30,9 @@ This world is played on **SPT 4.0.13** (Single Player Tarkov), which runs on the
 ## What items can I receive?
 
 Besides map, trader and Flea Market unlocks you can receive experience, trader reputation, money, and crates of
-weapons, armor, medicine, ammo, keys, stimulants, barter goods and provisions. Physical items arrive as messages from
-the **Archipelago** contact in your in-game messenger; open the chat and press "Receive" to collect them.
+weapons, armor, medicine, ammo, keys, stimulants, barter goods and provisions. Physical items arrive in your
+**System** messages in the in-game messenger; open the message and press "Receive" to collect them. The **Archipelago**
+contact tells you what you received.
 
 Traps: *Fence Grudge* (lowers Fence reputation), *Exhaustion* (drains energy and hydration) and *Scav Cooldown*
 (adds 20 minutes to your Scav cooldown).

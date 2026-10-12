@@ -40,13 +40,14 @@ multiworld chat.
 
 ## Things to know
 
-- Items arrive as messages from the Archipelago contact; press **Receive** to take attachments.
+- Items arrive in your **System** messages; press **Receive** to take them. The Archipelago contact tells you what
+  arrived.
 - Newly unlocked maps appear after your next raid or a game restart.
 - Experience, reputation and traps show in game after your next inventory action, trade or raid; in raid they wait
   until the raid ends.
 - Extractions count only as a PMC, on maps you own. Transits are not extractions.
 - With `starting_kit: replace`, restart the game right after linking (before any raid): that's when your starting
-  stash is swapped for your random kit, which arrives as a message.
+  stash is swapped for your random kit, which arrives in your System messages.
 - **Collector goal:** accept Therapist's *Colleagues - Part 3* before turning in Jaeger's *The Huntsman Path -
   Sadist*, or *Collector* can't be finished.
 - Before removing the mod, send `reset` then `reset confirm` on each linked profile so its traders and Flea Market

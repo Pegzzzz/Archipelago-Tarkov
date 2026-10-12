@@ -3,7 +3,7 @@
 This guide takes you from a working SPT install to playing Tarkov in an Archipelago multiworld.
 Setting up the mod takes about 10 minutes.
 
-> **Status: early release (v1.1.0).** Everything is tested against a real SPT 4.0.13 server and a real Archipelago
+> **Status: early release (v1.1.1).** Everything is tested against a real SPT 4.0.13 server and a real Archipelago
 > server, with a script standing in for the game client. It hasn't had a full in-game playthrough yet, so expect rough
 > edges. Please report problems (see [Reporting problems](#reporting-problems)).
 
@@ -192,9 +192,10 @@ That's it. The connection is remembered for this profile: every time the SPT ser
   transit to another map isn't an extraction.
 
 **Receiving items**
-- Everything arrives as a message from the **Archipelago** contact. Money and crates (weapons, armor, medicine,
-  ammo, keys, stims, barter goods, provisions) are attachments: open the message and press **Receive**. Messages
-  with items are kept for a year.
+- The **Archipelago** contact tells you everything you receive. Money and crates (weapons, armor, medicine, ammo,
+  keys, stims, barter goods, provisions) arrive in your **System** messages (the "System" chat in the messenger,
+  each starting with "Archipelago:"): open the message and press **Receive**. Messages with items are kept for a
+  year.
 - A new trader comes with a system message; receiving it opens the trader right away (otherwise after a restart).
 - **Experience, reputation and traps** are applied by the server straight away and show in game after your next
   inventory action, trade or raid. If you're in a raid, they wait until the raid ends.
@@ -227,9 +228,10 @@ everyone's is different:
 | Meds / food | 2 / 1 | 3 / 2 | 5 / 2 |
 | Roubles | 30k–80k | 100k–250k | 300k–600k |
 
-- **`extra`:** the kit arrives as a message from the Archipelago contact. Your normal starting stash stays.
+- **`extra`:** the kit arrives in your System messages. Your normal starting stash stays.
 - **`replace`:** when you restart the game after linking, your starting stash and gear are removed (the knife,
-  pockets and secure container stay) and the kit arrives as a message. Open it and press **Receive**, then gear up.
+  pockets and secure container stay) and the kit arrives in your System messages. Open it and press **Receive**, then
+  gear up.
   This only happens on a brand-new profile: if the profile was already played, or you start a raid before
   restarting, your stash is kept and the kit comes on top instead.
 
@@ -274,7 +276,7 @@ Your Archipelago progress lives in `SPT\user\mods\ArchipelagoTarkov\profiles\`. 
 
 **The SPT console doesn't show "Archipelago for Tarkov loaded"**
 Check that `ArchipelagoTarkov.dll` is at `SPT\user\mods\ArchipelagoTarkov\ArchipelagoTarkov.dll`. The console lists
-every mod it loads (`Mod: Archipelago for Tarkov version: 1.1.0 ... loaded`); on an SPT version other than 4.0.13 it
+every mod it loads (`Mod: Archipelago for Tarkov version: 1.1.1 ... loaded`); on an SPT version other than 4.0.13 it
 shows an error about the mod's SPT version instead. Look for red lines mentioning Archipelago.
 
 **There's no Archipelago contact in the messenger**
@@ -299,6 +301,11 @@ this profile's Archipelago progress first.
 
 **A map I received doesn't show up**
 The game keeps the map list it loaded. Do one raid on a map you have, or restart the game.
+
+**Items in the Archipelago chat can't be received (version 1.1.0 and older)**
+The game only lets you collect items from System messages. Update the mod to 1.1.1 or newer (no new multiworld
+needed): the first time the SPT server starts with it, every item still attached to an Archipelago chat message is
+sent again to your System messages, and the contact tells you how many.
 
 **A trader I received is still locked**
 Open the system message that came with the trader and receive it, or restart the game.

@@ -286,6 +286,29 @@ public sealed class ApSession
         }
     }
 
+    /// <summary>One-time repair for profiles that received items with version 1.1.0 or older.</summary>
+    private void MoveStuckAttachments()
+    {
+        try
+        {
+            var moved = _game.ResendStuckAttachments(ProfileId);
+            if (moved > 0)
+            {
+                _profileChanged = true;
+                _log($"[Archipelago] re-sent {moved} stuck deliveries as system messages for {ProfileId}");
+                Say($"{moved} earlier deliver{(moved == 1 ? "y" : "ies")} could not be collected from this chat. " +
+                    "They have been sent again as System messages: open the System chat and press Receive.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _log($"[Archipelago] could not re-send stuck deliveries for {ProfileId}: {ex}");
+        }
+
+        State.MailVersion = 2;
+        _dirty = true;
+    }
+
     private void PlanStartingKit()
     {
         var mode = State.SlotString("starting_kit");
@@ -326,7 +349,8 @@ public sealed class ApSession
                 ? $"Your random starting kit ({quality}). Your old starting stash ({removed} items) was removed."
                 : $"Your random starting kit ({quality}).";
             _game.SendItems(ProfileId, intro + "\n- " + string.Join("\n- ", contents), items);
-            EnqueueClientMessage("Your random starting kit has arrived in the messenger");
+            _chatLines.Add("Your random starting kit is in your System messages: open it and press Receive.");
+            EnqueueClientMessage("Your random starting kit is in your System messages");
             _log($"[Archipelago] starting kit for {ProfileId} ({quality}{(clearInventory ? ", replace" : "")}): {string.Join("; ", contents)}");
         }
         catch (Exception ex)
@@ -408,6 +432,11 @@ public sealed class ApSession
         if (!_game.ProfileExists(ProfileId))
         {
             return;
+        }
+
+        if (State.MailVersion < 2)
+        {
+            MoveStuckAttachments();
         }
 
         MaintainConnection();
@@ -1012,7 +1041,8 @@ public sealed class ApSession
             {
                 var items = _game.CreateMoney(def.Str("currency")!, (int)def.Num("amount"));
                 _game.SendItems(ProfileId, $"{def.Name} {from}", items);
-                EnqueueClientMessage($"Received {def.Name}");
+                _chatLines.Add($"Received {def.Name} {from}. Collect it in your System messages.");
+                EnqueueClientMessage($"Received {def.Name} (System messages)");
                 break;
             }
             case "loot":
@@ -1020,7 +1050,8 @@ public sealed class ApSession
                 var rng = new Random(StableSeed(State.SeedName ?? "", index, received.Item));
                 var items = _game.CreateCrate(def.Str("pool")!, (int)def.Num("count", 1), rng, out var description);
                 _game.SendItems(ProfileId, $"{def.Name} {from}: {description}", items);
-                EnqueueClientMessage($"Received {def.Name}");
+                _chatLines.Add($"Received {def.Name} {from}: {description}. Collect it in your System messages.");
+                EnqueueClientMessage($"Received {def.Name} (System messages)");
                 break;
             }
             default:
