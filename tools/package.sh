@@ -1,6 +1,6 @@
 #!/bin/bash
 # Put the release files in dist/ from already-built binaries (same layout as the CI workflow):
-#   ArchipelagoTarkov-<version>-SPT-4.0.13.zip   extract into the game folder
+#   ArchipelagoTarkov-<version>-SPT-4.1.6.zip   extract into the game folder
 #   tarkov.apworld                               built with Archipelago's "Build APWorlds"
 #   Escape from Tarkov.yaml                      options template
 #   ArchipelagoTarkov-<version>-source.zip
@@ -22,10 +22,10 @@ done
 rm -rf "$DIST"
 STAGE=$(mktemp -d)
 trap 'rm -rf "$STAGE"' EXIT
-mkdir -p "$DIST" "$STAGE/SPT/user/mods/ArchipelagoTarkov" "$STAGE/BepInEx/plugins/ArchipelagoTarkov"
-cp "$SERVER_DLL" "$STAGE/SPT/user/mods/ArchipelagoTarkov/"
+mkdir -p "$DIST" "$STAGE/SPT_Runtime/user/mods/ArchipelagoTarkov" "$STAGE/BepInEx/plugins/ArchipelagoTarkov"
+cp "$SERVER_DLL" "$STAGE/SPT_Runtime/user/mods/ArchipelagoTarkov/"
 cp "$CLIENT_DLL" "$STAGE/BepInEx/plugins/ArchipelagoTarkov/"
-(cd "$STAGE" && zip -qr "$DIST/ArchipelagoTarkov-$VERSION-SPT-4.0.13.zip" SPT BepInEx)
+(cd "$STAGE" && zip -qr "$DIST/ArchipelagoTarkov-$VERSION-SPT-4.1.6.zip" SPT_Runtime BepInEx)
 
 # APWorld and template, with Archipelago's own tools
 rm -rf "$AP/worlds/tarkov" "$AP/build/apworlds/tarkov.apworld" "$AP/templates-tarkov"

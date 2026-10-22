@@ -29,7 +29,11 @@ namespace EFT.Communications
     public enum ENotificationDurationType { Default = 0, Long = 1, Infinite = 2 }
     public enum ENotificationIconType { Default = 0, Alert = 1 }
 }
+#if OLD_NOTIFICATIONS
 public class NotificationManagerClass
+#else
+namespace EFT.Communications { public class NotificationManager
+#endif
 {
     public static List<string> Shown = new List<string>();
     public static List<int> Durations = new List<int>();
@@ -39,3 +43,6 @@ public class NotificationManagerClass
         UnityEngine.Color? color = null)
     { Shown.Add(message); Durations.Add((int)duration); }
 }
+#if !OLD_NOTIFICATIONS
+}
+#endif

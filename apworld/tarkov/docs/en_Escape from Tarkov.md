@@ -7,8 +7,8 @@ config file.
 
 ## What version of the game does this use?
 
-This world is played on **SPT 4.0.13** (Single Player Tarkov), which runs on the Escape from Tarkov client build
-**0.16.9.0.40087**. It does not work with the official PvE or PvP modes.
+This world is played on **SPT 4.1.6** (Single Player Tarkov), which runs on the Escape from Tarkov client build
+**0.16.9.5.40743**. It does not work with the official PvE or PvP modes.
 
 ## What does randomization do to this game?
 

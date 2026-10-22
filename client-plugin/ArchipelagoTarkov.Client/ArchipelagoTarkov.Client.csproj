@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!--
-    Optional BepInEx client plugin for Archipelago for Tarkov (SPT 4.0.13).
+    Optional BepInEx client plugin for Archipelago for Tarkov (SPT 4.1.6).
 
     Build:  dotnet build -c Release -p:SptPath="C:\SPT"
     SptPath is your SPT folder (the one with EscapeFromTarkov.exe). The plugin only needs

@@ -1,4 +1,4 @@
-"""A scripted stand-in for the Escape from Tarkov client, talking to a real SPT 4.0.13 server.
+"""A scripted stand-in for the Escape from Tarkov client, talking to a real SPT 4.1.6 server.
 
 It speaks the same HTTP API the game uses (plain JSON with requestcompressed/responsecompressed = 0),
 which is enough to create profiles, chat with the Archipelago contact, accept/complete quests and
@@ -54,8 +54,17 @@ class SptClient:
 
     # ------------------------------------------------------------------ account
     def register_and_login(self, username: str, password: str = "", edition: str = "Standard") -> str:
-        self.raw("/launcher/profile/register", {"username": username, "password": password, "edition": edition})
-        sid = self.raw("/launcher/profile/login", {"username": username, "password": password}).strip().strip('"')
+        try:
+            # SPT 4.1+: the v2 launcher API; the session id is the profile id
+            self.call("/launcher/v2/register", {"username": username, "password": password, "edition": edition})
+            info = self.call("/launcher/v2/profile", {"username": username, "password": password})
+            sid = (info.get("Response") or info.get("response") or {}).get("profileId") if isinstance(info, dict) else None
+        except Exception:  # noqa: BLE001
+            sid = None
+        if not sid:
+            # SPT 4.0
+            self.raw("/launcher/profile/register", {"username": username, "password": password, "edition": edition})
+            sid = self.raw("/launcher/profile/login", {"username": username, "password": password}).strip().strip('"')
         if not sid or sid.upper() == "FAILED":
             raise RuntimeError(f"login failed: {sid}")
         self.session = sid

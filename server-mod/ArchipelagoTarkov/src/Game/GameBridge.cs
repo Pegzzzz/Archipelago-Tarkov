@@ -1,7 +1,6 @@
 using ArchipelagoTarkov.Data;
 using ArchipelagoTarkov.State;
 using SPTarkov.DI.Annotations;
-using SPTarkov.Server.Core.Helpers;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
@@ -9,9 +8,7 @@ using SPTarkov.Server.Core.Models.Eft.Profile;
 using SPTarkov.Server.Core.Models.Enums;
 using SPTarkov.Server.Core.Models.Spt.Config;
 using SPTarkov.Server.Core.Models.Spt.Dialog;
-using SPTarkov.Server.Core.Models.Utils;
 using SPTarkov.Server.Core.Servers;
-using SPTarkov.Server.Core.Services;
 
 namespace ArchipelagoTarkov.Game;
 
@@ -24,7 +21,7 @@ public class GameBridge(
     MailSendService mailSendService,
     TraderHelper traderHelper,
     LootPools lootPools,
-    ConfigServer configServer
+    TraderConfig traderConfig
 )
 {
     /// <summary>Flea bans the mod adds carry this exact timestamp (1 Jan 2100) so they can be told apart from real bans.</summary>
@@ -334,9 +331,7 @@ public class GameBridge(
     {
         try
         {
-#pragma warning disable CS0618 // ConfigServer is the supported way on SPT 4.0.x
-            var fence = configServer.GetConfig<TraderConfig>().Fence;
-#pragma warning restore CS0618
+            var fence = traderConfig.Fence;
             return (fence.PlayerRepMin, fence.PlayerRepMax);
         }
         catch

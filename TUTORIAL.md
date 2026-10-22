@@ -3,7 +3,7 @@
 This guide takes you from a working SPT install to playing Tarkov in an Archipelago multiworld.
 Setting up the mod takes about 10 minutes.
 
-> **Status: early release (v1.1.1).** Everything is tested against a real SPT 4.0.13 server and a real Archipelago
+> **Status: early release (v2.0.0, for SPT 4.1.6).** Everything is tested against a real SPT 4.1.6 server and a real Archipelago
 > server, with a script standing in for the game client. It hasn't had a full in-game playthrough yet, so expect rough
 > edges. Please report problems (see [Reporting problems](#reporting-problems)).
 
@@ -17,35 +17,35 @@ Setting up the mod takes about 10 minutes.
 | Thing | Where to get it |
 |---|---|
 | A legal copy of Escape from Tarkov | [escapefromtarkov.com](https://www.escapefromtarkov.com) (SPT needs it installed to make its copy) |
-| **SPT 4.0.13** (game build `0.16.9-40087`) | See [section 2](#2-get-spt-4013) |
-| The .NET 9 runtimes SPT 4.0.x needs | [.NET 9.0.9 runtime](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-9.0.9-windows-x64-installer) and [ASP.NET Core 9.0.9 runtime](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-aspnetcore-9.0.9-windows-x64-installer) |
+| **SPT 4.1.6** (game build `0.16.9.5.40743`) | See [section 2](#2-get-spt-416) |
+| The .NET 10 runtimes SPT 4.1 needs | The *.NET Runtime* and *ASP.NET Core Runtime* 10.0 (Windows x64) from [dotnet.microsoft.com](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) |
 | Archipelago **0.6.4 or newer** | [Archipelago releases](https://github.com/ArchipelagoMW/Archipelago/releases) — install it like any program |
 | This mod's release files | The [**Releases** page](https://github.com/Pegzzzz/Archipelago-Tarkov/releases) of this repository |
 
 From the latest release, download:
 
-- `ArchipelagoTarkov-<version>-SPT-4.0.13.zip` — the SPT server mod and the (optional) client plugin
+- `ArchipelagoTarkov-<version>-SPT-4.1.6.zip` — the SPT server mod and the (optional) client plugin
 - `tarkov.apworld` — teaches Archipelago about Tarkov
 - `Escape.from.Tarkov.yaml` — your settings file (GitHub swaps the spaces for dots; the name doesn't matter)
 
 ---
 
-## 2. Get SPT 4.0.13
+## 2. Get SPT 4.1.6
 
-This release is made for **SPT 4.0.13**. It won't load on SPT 4.1 or newer, or on 3.x.
+This release is made for **SPT 4.1.6**, the version now maintained by the SP Tushonka team. It won't load on SPT 4.0.x
+or 3.x.
 
-- **You already play SPT 4.0.13:** nothing to do. Use a separate install if you don't want to touch your usual one.
-- **You have SPT 4.0.x (4.0.0 – 4.0.12):** update it. Download the 7z from the
-  [SPT 4.0.13 release](https://github.com/sp-tarkov/build/releases/tag/4.0.13) ("Direct Download" section) and extract
-  it into your SPT folder, replacing all files (SPT's
-  [update instructions](https://github.com/sp-tarkov/build/wiki/Update-Instructions)).
-- **You don't have SPT yet:** the [SPT installer](https://forge.sp-tarkov.com/installer) always installs the *newest*
-  SPT, which is 4.1 now. For 4.0.13 you need SPT's
-  [manual install](https://wiki.sp-tarkov.com/en/Manual-Install-Instructions) with the 4.0.13 files and a game client on
-  build `0.16.9-40087`. If you get stuck, SPT's Discord (`#spt-support`) is the place to ask.
+- **You already play SPT 4.1.6:** nothing to do. Use a separate install if you don't want to touch your usual one.
+- **You have an older SPT 4.1.x:** update it with the 7z from the
+  [SPT 4.1.6 release](https://github.com/SP-Tushonka/build/releases/tag/4.1.6), following the update steps on the
+  [SPT wiki](https://wiki.sp-tushonka.com).
+- **You don't have SPT yet, or you're on 4.0:** install 4.1.6 with SPT's installer or the manual install
+  instructions, both on the [SPT wiki](https://wiki.sp-tushonka.com). Your game client must be on build
+  `0.16.9.5.40743`.
+- **You want to stay on SPT 4.0.13:** use release 1.1.1 of this mod (the `spt-4.0` branch). It isn't updated anymore.
 
-Before going on, start SPT once without any mods (`SPT\SPT.Server.exe`, then `SPT\SPT.Launcher.exe`) and check that
-you get to the main menu. That way, if something breaks later, you know it's the mod.
+Before going on, start SPT once without any mods (`SPT_Runtime\SPT.Server.exe`, then `SPT_Runtime\SPT.Launcher.exe`)
+and check that you get to the main menu. That way, if something breaks later, you know it's the mod.
 
 Your SPT folder should look like this (the names that matter):
 
@@ -53,7 +53,7 @@ Your SPT folder should look like this (the names that matter):
 <your SPT folder>\
 ├── EscapeFromTarkov.exe
 ├── BepInEx\
-└── SPT\
+└── SPT_Runtime\
     ├── SPT.Server.exe
     ├── SPT.Launcher.exe
     └── user\
@@ -64,24 +64,25 @@ Your SPT folder should look like this (the names that matter):
 ## 3. Install the mod
 
 1. Close the game, the SPT launcher and the SPT server.
-2. Open `ArchipelagoTarkov-<version>-SPT-4.0.13.zip` and extract **both folders inside it** (`SPT` and `BepInEx`) into
+2. Open `ArchipelagoTarkov-<version>-SPT-4.1.6.zip` and extract **both folders inside it** (`SPT_Runtime` and `BepInEx`) into
    your SPT folder (the one with `EscapeFromTarkov.exe`). Say **yes** if Windows asks to merge folders.
 3. Check that these two files exist:
-   - `SPT\user\mods\ArchipelagoTarkov\ArchipelagoTarkov.dll` — the server mod (**required**)
+   - `SPT_Runtime\user\mods\ArchipelagoTarkov\ArchipelagoTarkov.dll` — the server mod (**required**)
    - `BepInEx\plugins\ArchipelagoTarkov\ArchipelagoTarkov.Client.dll` — the client plugin (optional, recommended)
-4. Start `SPT\SPT.Server.exe`. In its console you should see:
+4. Start `SPT_Runtime\SPT.Server.exe`. In its console you should see:
 
    ```
-   Archipelago for Tarkov loaded (367 quest checks, 0 linked profiles). Message the Archipelago contact in game to connect.
+   Archipelago for Tarkov loaded (364 quest checks, 0 linked profiles). Message the Archipelago contact in game to connect.
    ```
 
 What the client plugin adds: on-screen notifications during raids (items received, items sent, chat), and dying
 in raid when someone else's DeathLink hits you. Without it everything else works the same; messages just wait in
 your messenger.
 
-> **Other mods:** the mod works next to other SPT 4.0.x mods. It was tested with Fika, SVM (Server Value Modifier),
-> WTT-CommonLib and a custom trader. Only the seven main traders and the ten standard maps are locked; traders and
-> maps added by other mods are left alone.
+> **Other mods:** the mod is built to work next to other SPT 4.1 mods: when another mod replaces part of SPT, it hooks
+> the replacement. The 1.x releases were tested with Fika, SVM (Server Value Modifier), WTT-CommonLib and a custom
+> trader on SPT 4.0.13; on 4.1.6 it has been tested on its own so far. Only the seven main traders and the ten
+> standard maps are locked; traders and maps added by other mods are left alone.
 >
 > **Fika:** install the server mod on the PC that runs the SPT server. Every player who wants in-raid notifications
 > or DeathLink installs the client plugin on their own PC. Each player links their own profile to their own slot.
@@ -151,7 +152,7 @@ Whoever runs the multiworld does this once for the whole group.
 
 ## 7. Connect and play
 
-1. Start `SPT\SPT.Server.exe`, then `SPT\SPT.Launcher.exe`.
+1. Start `SPT_Runtime\SPT.Server.exe`, then `SPT_Runtime\SPT.Launcher.exe`.
 2. In the launcher, make a **new profile** for this multiworld. Pick the **Standard** edition: the others start with
    hideout levels already built (their checks are sent the moment you connect). Create your character and get to
    the main menu.
@@ -259,25 +260,28 @@ Anything else you type is sent to the multiworld chat.
 ## 10. Updating and uninstalling
 
 **Updating:** close everything, extract the new release zip over the old one, and install the new `tarkov.apworld`.
+Going from 1.x (SPT 4.0.13) to 2.0 (SPT 4.1.6) needs a new multiworld, because the quest list changed with the game
+update.
 The mod and the APWorld that generated your game must come from the **same release**; the mod refuses to connect
 to a game made with a different version (it says so in the messenger). Your progress is kept.
 
 **Uninstalling:** first send `reset` and then `reset confirm` to the Archipelago contact on every linked profile.
-That unlocks the traders and lifts the Flea Market ban. Then delete `SPT\user\mods\ArchipelagoTarkov` and
+That unlocks the traders and lifts the Flea Market ban. Then delete `SPT_Runtime\user\mods\ArchipelagoTarkov` and
 `BepInEx\plugins\ArchipelagoTarkov`. (If you delete the mod without resetting, those profiles keep their locked
 traders and Flea Market ban.)
 
-Your Archipelago progress lives in `SPT\user\mods\ArchipelagoTarkov\profiles\`. Back it up together with
-`SPT\user\profiles\` if you back up your saves.
+Your Archipelago progress lives in `SPT_Runtime\user\mods\ArchipelagoTarkov\profiles\`. Back it up together with
+`SPT_Runtime\user\profiles\` if you back up your saves.
 
 ---
 
 ## 11. Troubleshooting
 
 **The SPT console doesn't show "Archipelago for Tarkov loaded"**
-Check that `ArchipelagoTarkov.dll` is at `SPT\user\mods\ArchipelagoTarkov\ArchipelagoTarkov.dll`. The console lists
-every mod it loads (`Mod: Archipelago for Tarkov version: 1.1.1 ... loaded`); on an SPT version other than 4.0.13 it
-shows an error about the mod's SPT version instead. Look for red lines mentioning Archipelago.
+Check that `ArchipelagoTarkov.dll` is at `SPT_Runtime\user\mods\ArchipelagoTarkov\ArchipelagoTarkov.dll`. The console
+lists every mod it loads (`Mod: Archipelago for Tarkov version: 2.0.0 ... loaded`); on SPT older than 4.1.6, or 4.2
+and newer, it shows an error about the mod's SPT version instead (for SPT 4.0.13, use release 1.1.1). Look for red
+lines mentioning Archipelago.
 
 **There's no Archipelago contact in the messenger**
 Same as above: the server mod didn't load. Restart the SPT server and the game.
@@ -324,7 +328,7 @@ count.
 
 Open an [Issue](https://github.com/Pegzzzz/Archipelago-Tarkov/issues) on this repository and include:
 
-- the newest log file from `SPT\user\logs\` (the lines with `Archipelago` matter most)
+- the newest log file from `SPT_Runtime\user\logs\spt\` (the lines with `Archipelago` matter most)
 - what you were doing (which quest, map or item), and what you expected
 - your mod version and the other mods you have installed
 
@@ -333,7 +337,7 @@ Open an [Issue](https://github.com/Pegzzzz/Archipelago-Tarkov/issues) on this re
 ## Credits
 
 - Archipelago integration: **Pegz**
-- [SPT](https://sp-tarkov.com) by the SPT team
+- SPT by the SPT and SP Tushonka teams
 - [Archipelago](https://archipelago.gg) and its community
 - Escape from Tarkov is made by Battlestate Games. This project isn't affiliated with Battlestate Games, SPT or
   Archipelago.

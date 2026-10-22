@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate the shared Archipelago data table for Escape from Tarkov (SPT 4.0.13).
+Generate the shared Archipelago data table for Escape from Tarkov (SPT 4.1.6).
 
 Reads the SPT server database (the SPT_Data folder shipped with an SPT release) and
 writes one JSON file that both the APWorld and the SPT server mod load, so item and
@@ -567,8 +567,8 @@ def main(spt_data_dir: str, out_path: str) -> None:
 
     data = OrderedDict()
     data["meta"] = {
-        "spt_version": "4.0.13",
-        "eft_build": "0.16.9.0.40087",
+        "spt_version": "4.1.6",
+        "eft_build": "0.16.9.5.40743",
         "item_base": ITEM_BASE,
         "location_base": LOCATION_BASE,
         "data_hash": data_hash,

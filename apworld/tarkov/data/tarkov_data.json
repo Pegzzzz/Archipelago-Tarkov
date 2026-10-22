@@ -1,10 +1,10 @@
 {
  "meta": {
-  "spt_version": "4.0.13",
-  "eft_build": "0.16.9.0.40087",
+  "spt_version": "4.1.6",
+  "eft_build": "0.16.9.5.40743",
   "item_base": 76310000,
   "location_base": 76400000,
-  "data_hash": "f2f528517a7485c295d55a38d9563057609e5db1"
+  "data_hash": "21a1b244aaad8b8b6ad241572e12e00ef05e864b"
  },
  "maps": [
   {
@@ -16447,13 +16447,13 @@
      "reserve"
     ]
    ],
-   "possible": true,
-   "start_ok": true,
-   "finish_ok": true,
-   "reason": null,
-   "check": true,
-   "location_id": 76400364,
-   "location_name": "Mechanic - Friend from Norvinsk - Part 1"
+   "possible": false,
+   "start_ok": false,
+   "finish_ok": false,
+   "reason": "seasonal/event quest",
+   "check": false,
+   "location_id": null,
+   "location_name": null
   },
   {
    "id": "6863d9bcd3bfdcb2bc075956",
@@ -16476,13 +16476,13 @@
      "shoreline"
     ]
    ],
-   "possible": true,
-   "start_ok": true,
-   "finish_ok": true,
-   "reason": null,
-   "check": true,
-   "location_id": 76400365,
-   "location_name": "Mechanic - Friend from Norvinsk - Part 2"
+   "possible": false,
+   "start_ok": false,
+   "finish_ok": false,
+   "reason": "requires 'Friend from Norvinsk - Part 1' (seasonal/event quest)",
+   "check": false,
+   "location_id": null,
+   "location_name": null
   },
   {
    "id": "6863e09a5f4d17fd3e01feee",
@@ -16505,13 +16505,13 @@
      "shoreline"
     ]
    ],
-   "possible": true,
-   "start_ok": true,
-   "finish_ok": true,
-   "reason": null,
-   "check": true,
-   "location_id": 76400366,
-   "location_name": "Mechanic - Friend from Norvinsk - Part 3"
+   "possible": false,
+   "start_ok": false,
+   "finish_ok": false,
+   "reason": "requires 'Friend from Norvinsk - Part 2' (requires 'Friend from Norvinsk - Part 1' (seasonal/event quest))",
+   "check": false,
+   "location_id": null,
+   "location_name": null
   },
   {
    "id": "686403eeb4aaef121c0f0f06",
@@ -16531,9 +16531,9 @@
    "finish_trader_ll": [],
    "objective_maps": [],
    "possible": false,
-   "start_ok": true,
-   "finish_ok": true,
-   "reason": "branching quest (completing another quest fails it)",
+   "start_ok": false,
+   "finish_ok": false,
+   "reason": "requires 'Friend from Norvinsk - Part 3' (requires 'Friend from Norvinsk - Part 2' (requires 'Friend from Norvinsk - Part 1' (seasonal/event quest)))",
    "check": false,
    "location_id": null,
    "location_name": null
@@ -16562,7 +16562,7 @@
    "possible": false,
    "start_ok": false,
    "finish_ok": false,
-   "reason": "requires 'Friend from Norvinsk - Part 4' (branching quest (completing another quest fails it))",
+   "reason": "requires 'Friend from Norvinsk - Part 4' (requires 'Friend from Norvinsk - Part 3' (requires 'Friend from Norvinsk - Part 2' (requires 'Friend from Norvinsk - Part 1' (seasonal/event quest))))",
    "check": false,
    "location_id": null,
    "location_name": null
@@ -16587,7 +16587,7 @@
    "possible": false,
    "start_ok": false,
    "finish_ok": false,
-   "reason": "requires 'Friend from Norvinsk - Part 5' (requires 'Friend from Norvinsk - Part 4' (branching quest (completing another quest fails it)))",
+   "reason": "requires 'Friend from Norvinsk - Part 5' (requires 'Friend from Norvinsk - Part 4' (requires 'Friend from Norvinsk - Part 3' (requires 'Friend from Norvinsk - Part 2' (requires 'Friend from Norvinsk - Part 1' (seasonal/event quest)))))",
    "check": false,
    "location_id": null,
    "location_name": null
@@ -16685,7 +16685,7 @@
    "finish_trader_ll": [],
    "objective_maps": [
     [
-     "reserve"
+     "*"
     ]
    ],
    "possible": false,
@@ -16714,9 +16714,9 @@
    "finish_trader_ll": [],
    "objective_maps": [],
    "possible": false,
-   "start_ok": true,
-   "finish_ok": true,
-   "reason": "branching quest (completing another quest fails it)",
+   "start_ok": false,
+   "finish_ok": false,
+   "reason": "requires 'Friend from Norvinsk - Part 3' (requires 'Friend from Norvinsk - Part 2' (requires 'Friend from Norvinsk - Part 1' (seasonal/event quest)))",
    "check": false,
    "location_id": null,
    "location_name": null

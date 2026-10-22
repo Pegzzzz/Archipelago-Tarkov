@@ -4,20 +4,20 @@ The full tutorial is on GitHub: <https://github.com/Pegzzzz/Archipelago-Tarkov/b
 
 ## Required software
 
-- A legal copy of Escape from Tarkov, with **SPT 4.0.13** (game build 0.16.9-40087) and its .NET 9.0.9 runtimes.
-  SPT 4.1 and newer are not supported by this release.
+- A legal copy of Escape from Tarkov, with **SPT 4.1.6** (game build 0.16.9.5.40743) and the .NET 10 and ASP.NET
+  Core 10 runtimes. For SPT 4.0.13, use release 1.1.1 of the mod.
 - Archipelago 0.6.4 or newer.
 - From the [releases page](https://github.com/Pegzzzz/Archipelago-Tarkov/releases):
-  `ArchipelagoTarkov-<version>-SPT-4.0.13.zip`, `tarkov.apworld` and the YAML template.
+  `ArchipelagoTarkov-<version>-SPT-4.1.6.zip`, `tarkov.apworld` and the YAML template.
 
 ## Installing
 
 1. Close the game and the SPT server.
 2. Extract the release zip into your SPT folder (the one with `EscapeFromTarkov.exe`). You get
-   `SPT/user/mods/ArchipelagoTarkov/ArchipelagoTarkov.dll` (the server mod, required) and
+   `SPT_Runtime/user/mods/ArchipelagoTarkov/ArchipelagoTarkov.dll` (the server mod, required) and
    `BepInEx/plugins/ArchipelagoTarkov/ArchipelagoTarkov.Client.dll` (the client plugin, optional: in-raid
    notifications and DeathLink deaths in raid).
-3. Start `SPT/SPT.Server.exe`. The console shows `Archipelago for Tarkov loaded`.
+3. Start `SPT_Runtime/SPT.Server.exe`. The console shows `Archipelago for Tarkov loaded`.
 4. Install `tarkov.apworld` in Archipelago (double-click it, or copy it into `custom_worlds`).
 
 ## Generating

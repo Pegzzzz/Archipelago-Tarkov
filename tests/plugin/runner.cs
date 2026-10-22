@@ -28,7 +28,7 @@ public static class Runner
         var killed = (bool)call("KillMainPlayer", new object[0]);
         var dead = (bool)health.GetType().GetField("Dead").GetValue(health);
         var killMe = (bool)player.GetType().GetField("KilledByKillMe").GetValue(player);
-        if (mode == "kill")
+        if (mode == "kill" || mode == "oldnames")
         {
             Check(killed && dead, "kill: Kill(EDamageType) was used");
             Check(health.GetType().GetField("Cause").GetValue(health).ToString() == "Undefined", "kill: cause Undefined");
@@ -43,8 +43,9 @@ public static class Runner
         }
 
         call("Notify", new object[] { "Received Customs Access" });
-        var shown = (System.Collections.IList)game.GetType("NotificationManagerClass").GetField("Shown").GetValue(null);
-        var durations = (System.Collections.IList)game.GetType("NotificationManagerClass").GetField("Durations").GetValue(null);
+        var nm = game.GetType("EFT.Communications.NotificationManager") ?? game.GetType("NotificationManagerClass");
+        var shown = (System.Collections.IList)nm.GetField("Shown").GetValue(null);
+        var durations = (System.Collections.IList)nm.GetField("Durations").GetValue(null);
         Check(shown.Count == 1 && (string)shown[0] == "Received Customs Access", mode + ": notification shown");
         Check(durations.Count == 1 && (int)durations[0] == 1, mode + ": long duration used");
 

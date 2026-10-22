@@ -1,28 +1,29 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!--
-    Archipelago server mod for SPT 4.0.13.
+    Archipelago server mod for SPT 4.1.6.
 
-    Normal build (Windows/Linux with the .NET 9 SDK):
-      dotnet build -c Release -p:SptPath="C:\SPT"
-    SptPath must point at an SPT 4.0.13 install (the folder containing SPT.Server.exe or the SPT subfolder).
+    Build (Windows/Linux with the .NET 10 SDK):
+      dotnet build -c Release -p:SptPath="C:\Games\SPT"
+    SptPath is your SPT 4.1.6 game folder (the one with EscapeFromTarkov.exe and SPT_Runtime), or the
+    SPT_Runtime folder itself.
 
-    Offline build (no NuGet access): pass -p:OfflineRefs=<folder with .NET 9 framework dlls>
+    Offline build (no NuGet access): pass -p:OfflineRefs=<folder with .NET 10 framework dlls>
   -->
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>ArchipelagoTarkov</AssemblyName>
     <RootNamespace>ArchipelagoTarkov</RootNamespace>
-    <Version>1.1.1</Version>
+    <Version>2.0.0</Version>
     <OutputType>Library</OutputType>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
     <GenerateDependencyFile>false</GenerateDependencyFile>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <Deterministic>true</Deterministic>
-    <SptLibDir Condition="Exists('$(SptPath)\SPT\SPTarkov.Server.Core.dll')">$(SptPath)\SPT</SptLibDir>
+    <SptLibDir Condition="Exists('$(SptPath)\SPT_Runtime\SPTarkov.Server.Core.dll')">$(SptPath)\SPT_Runtime</SptLibDir>
     <SptLibDir Condition="'$(SptLibDir)' == ''">$(SptPath)</SptLibDir>
   </PropertyGroup>
 
@@ -51,7 +52,7 @@
   </ItemGroup>
 
   <Target Name="CheckSptPath" BeforeTargets="ResolveAssemblyReferences" Condition="!Exists('$(SptLibDir)\SPTarkov.Server.Core.dll')">
-    <Error Text="SPT 4.0.13 not found. Build with -p:SptPath=&quot;&lt;your SPT folder&gt;&quot; (the folder containing SPT.Server.exe, or its parent)." />
+    <Error Text="SPT 4.1.6 not found. Build with -p:SptPath=&quot;&lt;your SPT folder&gt;&quot; (the game folder, or its SPT_Runtime folder)." />
   </Target>
 
   <ItemGroup>

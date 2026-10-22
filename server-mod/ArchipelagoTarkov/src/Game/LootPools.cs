@@ -1,10 +1,8 @@
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Extensions;
-using SPTarkov.Server.Core.Helpers;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
 using SPTarkov.Server.Core.Models.Enums;
-using SPTarkov.Server.Core.Services;
 using SPTarkov.Server.Core.Utils.Cloners;
 
 namespace ArchipelagoTarkov.Game;
@@ -16,7 +14,7 @@ namespace ArchipelagoTarkov.Game;
 /// </summary>
 [Injectable(InjectionType.Singleton)]
 public class LootPools(
-    DatabaseService databaseService,
+    TemplateTable templateTable,
     ItemHelper itemHelper,
     PresetHelper presetHelper,
     HandbookHelper handbookHelper,
@@ -71,7 +69,7 @@ public class LootPools(
     {
         var catalog = new Catalog();
         var pools = catalog.Pools;
-        foreach (var (tpl, template) in databaseService.GetItems())
+        foreach (var (tpl, template) in templateTable.Items)
         {
             if (template.Type != "Item" || template.Properties is null)
             {

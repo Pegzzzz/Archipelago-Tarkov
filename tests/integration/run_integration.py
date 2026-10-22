@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-End-to-end test: real SPT 4.0.13 server + ArchipelagoTarkov mod + real Archipelago MultiServer.
+End-to-end test: real SPT 4.1.6 server + ArchipelagoTarkov mod + real Archipelago MultiServer.
 
 The script plays the part of the game client (HTTP calls the EFT client makes) and of the
 multiworld (a watcher client and server console commands), and checks every behaviour the mod
 promises. Run it from anywhere:
 
-    SPT_DIR=<SPT server folder> SPT_DOTNET=<.NET 9 dotnet> AP_DIR=<Archipelago checkout with the world installed> \
+    SPT_DIR=<SPT server folder> SPT_DOTNET=<.NET 10 dotnet> AP_DIR=<Archipelago checkout with the world installed> \
     AP_PYTHON=<python with Archipelago's requirements and websockets> python run_integration.py
 
 It deletes the SPT profiles and the mod's state in SPT_DIR, so use a throwaway SPT install.
@@ -27,7 +27,7 @@ from aptools import MultiServer, Watcher, generate, patch_multidata  # noqa: E40
 from sptclient import BOT_ID, SYSTEM_DIALOG, SptClient  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-SPT = os.environ.get("SPT_DIR") or sys.exit("set SPT_DIR to a throwaway SPT 4.0.13 server folder")
+SPT = os.environ.get("SPT_DIR") or sys.exit("set SPT_DIR to a throwaway SPT 4.1.6 server folder (the SPT_Runtime folder)")
 BIN = os.path.dirname(os.path.abspath(__file__))  # spt-start.sh / spt-stop.sh
 WORK = os.environ.get("WORK_DIR", os.path.join(tempfile.gettempdir(), "archipelago-tarkov-integration"))
 MOD_DIR = os.path.join(SPT, "user", "mods", "ArchipelagoTarkov")
@@ -358,8 +358,13 @@ def scenario(c: SptClient, server: MultiServer, watcher: Watcher, buddy: Watcher
         n = c.bot_ids()
         server.command("/send Runner Experience Bundle")
         c.wait_for_bot("Received Experience Bundle", start_count=n, timeout=30)
-        xp1 = wait(lambda: c.pmc()["Info"]["Experience"] if c.pmc()["Info"]["Experience"] > xp0 else None, what="xp")
+        # what the game sees after its next inventory action (the profile list is only loaded at startup)
+        def seen_xp():
+            changes = c.item_event([{"Action": "ReadEncyclopedia", "ids": []}])["profileChanges"][c.session]
+            return changes["experience"] if changes["experience"] > xp0 else None
+        xp1 = wait(seen_xp, timeout=40, interval=2, what="xp")
         assert xp1 - xp0 == 15000, (xp0, xp1)
+        assert c.pmc()["Info"]["Experience"] == xp1
     _()
 
     @step("items that change the profile wait for the raid to end; extraction counts")

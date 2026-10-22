@@ -4,17 +4,22 @@ using ArchipelagoTarkov.Data;
 using ArchipelagoTarkov.Game;
 using ArchipelagoTarkov.Patches;
 using ArchipelagoTarkov.State;
+using SPTarkov.DI;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.DI;
 using SPTarkov.Server.Core.Models.Spt.Config;
-using SPTarkov.Server.Core.Models.Utils;
 using SPTarkov.Server.Core.Servers;
 
 namespace ArchipelagoTarkov.Session;
 
 /// <summary>Owns every profile's <see cref="ApSession"/>, drives them from the SPT update loop and installs the patches.</summary>
-[Injectable(InjectionType.Singleton, typePriority: OnLoadOrder.PostSptModLoader + 1)]
-public class SessionManager(ISptLogger<SessionManager> logger, GameBridge game, ConfigServer configServer) : IOnLoad, IOnUpdate
+[Injectable(InjectionType.Singleton, OnLoadOrder.PostLoad + 1)]
+public class SessionManager(
+    ISptLogger<SessionManager> logger,
+    GameBridge game,
+    CoreConfig coreConfig,
+    IReadOnlyList<DependencyInjectionContainer> registrations
+) : IOnLoad, IOnUpdate
 {
     public static SessionManager? Instance { get; private set; }
 
@@ -27,7 +32,7 @@ public class SessionManager(ISptLogger<SessionManager> logger, GameBridge game, 
 
     public TarkovData Data => _data ?? throw new InvalidOperationException("Archipelago data not loaded");
 
-    public Task OnLoad()
+    public Task OnLoadAsync(CancellationToken cancellationToken)
     {
         try
         {
@@ -63,53 +68,19 @@ public class SessionManager(ISptLogger<SessionManager> logger, GameBridge game, 
     }
 
     /// <summary>
-    /// The classes the DI container really hands out for these SPT types: other mods may register a
-    /// subclass with [Injectable(typeOverride: ...)]. Worked out from the attributes the same way SPT's
-    /// DependencyInjectionHandler registers them, without creating any service.
+    /// The classes the DI container really hands out for these SPT types. Another mod can replace an SPT class by
+    /// registering a subclass of it; SPT registers types in TypePriority order and the last registration of a
+    /// type wins. SPT publishes that registration list, so nothing has to be created to find out.
     /// </summary>
     private Dictionary<Type, Type> ResolveRuntimeTypes(IEnumerable<Type> baseTypes)
     {
         var map = new Dictionary<Type, Type>();
         try
         {
-            var injectables = new List<(Type Type, Injectable Attribute)>();
-            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                if (assembly.IsDynamic || !UsesSptDi(assembly))
-                {
-                    continue;
-                }
-
-                Type?[] types;
-                try
-                {
-                    types = assembly.GetTypes();
-                }
-                catch (ReflectionTypeLoadException ex)
-                {
-                    types = ex.Types;
-                }
-
-                foreach (var type in types)
-                {
-                    if (type is { IsClass: true, IsAbstract: false } && type.GetCustomAttribute<Injectable>(false) is { } attribute)
-                    {
-                        injectables.Add((type, attribute));
-                    }
-                }
-            }
-
-            var replaced = injectables.Where(i => i.Attribute.TypeOverride != null)
-                .Select(i => i.Attribute.TypeOverride!.FullName)
-                .ToHashSet();
-            // SPT registers in TypePriority order (stable) and the last registration of a type wins.
-            var registered = injectables.Where(i => !replaced.Contains(i.Type.FullName))
-                .OrderBy(i => i.Attribute.TypePriority)
-                .ToList();
             foreach (var baseType in baseTypes)
             {
-                var winner = registered.LastOrDefault(i => baseType.IsAssignableFrom(i.Type)).Type;
-                if (winner != null && winner != baseType)
+                var winner = registrations.LastOrDefault(r => r.Type == baseType)?.ParentType;
+                if (winner != null && winner != baseType && baseType.IsAssignableFrom(winner))
                 {
                     map[baseType] = winner;
                 }
@@ -123,17 +94,9 @@ public class SessionManager(ISptLogger<SessionManager> logger, GameBridge game, 
         return map;
     }
 
-    private static bool UsesSptDi(Assembly assembly)
-    {
-        var name = assembly.GetName().Name;
-        return name is "SPTarkov.Server.Core" or "SPTarkov.DI"
-               || assembly.GetReferencedAssemblies().Any(r => r.Name == "SPTarkov.DI");
-    }
-
     private void EnableChatBot()
     {
-        var core = configServer.GetConfig<CoreConfig>();
-        core.Features.ChatbotFeatures.EnabledBots[GameBridge.ChatBotId] = true;
+        coreConfig.Features.ChatbotFeatures.EnabledBots[GameBridge.ChatBotId] = true;
     }
 
     // Each profile gets its own name book: two profiles may be linked to different multiworlds.
@@ -144,7 +107,7 @@ public class SessionManager(ISptLogger<SessionManager> logger, GameBridge game, 
 
     public void LogError(string message) => logger.Error($"[Archipelago] {message}");
 
-    public Task<bool> OnUpdate(long secondsSinceLastRun)
+    public Task<bool> OnUpdateAsync(long secondsSinceLastRun, CancellationToken cancellationToken)
     {
         if (!_loaded)
         {

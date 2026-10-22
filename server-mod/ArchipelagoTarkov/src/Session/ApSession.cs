@@ -217,9 +217,24 @@ public sealed class ApSession
     /// <summary>Called before SPT copies the client's profile at raid end.</summary>
     public void BeforeRaidEnd(PmcData? postRaidProfile, bool isPmc)
     {
+        // SPT 4.1 ends a raid asynchronously: stay "in raid" (profile changes wait) until OnRaidEnd, so nothing
+        // lands between this point and SPT copying the client's profile in. Also covers a server restarted mid-raid.
+        if (!InRaid)
+        {
+            InRaid = true;
+            RaidStarted = DateTime.UtcNow;
+        }
+
         // Not tied to Active: these are changes already made to the SPT profile (they survive a reset).
         _game.AddPendingToRaidResult(postRaidProfile, State, isPmc);
     }
+
+    private DateTime _profileChangesPausedUntil = DateTime.MinValue;
+
+    /// <summary>Hold back experience/reputation/trap changes for a while (the client is reading the profile).</summary>
+    public void PauseProfileChanges(TimeSpan duration) => _profileChangesPausedUntil = DateTime.UtcNow + duration;
+
+    private bool ProfileChangesPaused => InRaid || DateTime.UtcNow < _profileChangesPausedUntil;
 
     public void OnRaidEnd(string? mapKey, bool isPmc, ExitStatus? result, string? killerName)
     {
@@ -463,7 +478,7 @@ public sealed class ApSession
                 _profileChanged = true;
             }
 
-            if (!InRaid)
+            if (!ProfileChangesPaused)
             {
                 ApplyDeferred();
             }
@@ -1029,6 +1044,12 @@ public sealed class ApSession
                 {
                     State.Deferred.Add(index);
                     Announce($"Received {def.Name} {from}. It takes effect when your raid ends.");
+                }
+                else if (ProfileChangesPaused)
+                {
+                    // The game is loading the profile right now: apply in a few seconds.
+                    State.Deferred.Add(index);
+                    Announce($"Received {def.Name} {from}.{EffectSuffix(def)}");
                 }
                 else
                 {

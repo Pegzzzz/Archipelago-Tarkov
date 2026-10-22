@@ -18,11 +18,11 @@ public class ClientRouter(JsonUtil jsonUtil, HttpResponseUtil httpResponseUtil)
         [
             new RouteAction<EmptyRequestData>(
                 "/archipelago/client/poll",
-                (url, info, sessionId, output) => new ValueTask<string>(httpResponseUtil.NoBody(Poll(sessionId.ToString())))
+                (url, info, sessionId, output, cancellationToken) => new ValueTask<string>(httpResponseUtil.NoBody(Poll(sessionId.ToString())))
             ),
             new RouteAction<EmptyRequestData>(
                 "/archipelago/client/killed",
-                (url, info, sessionId, output) =>
+                (url, info, sessionId, output, cancellationToken) =>
                 {
                     var session = SessionManager.Instance?.Get(sessionId.ToString());
                     if (session != null)

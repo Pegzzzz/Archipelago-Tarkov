@@ -4,13 +4,11 @@ using HarmonyLib;
 using SPTarkov.Reflection.Patching;
 using SPTarkov.Server.Core.Callbacks;
 using SPTarkov.Server.Core.Controllers;
-using SPTarkov.Server.Core.Helpers;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
 using SPTarkov.Server.Core.Models.Eft.Match;
 using SPTarkov.Server.Core.Routers;
-using SPTarkov.Server.Core.Services;
 using LocationPath = SPTarkov.Server.Core.Models.Eft.Common.Tables.Path;
 
 namespace ArchipelagoTarkov.Patches;
@@ -186,35 +184,56 @@ public class TraderUnlockPatch : AbstractPatch
 public class RaidStartPatch : AbstractPatch
 {
     protected override MethodBase? GetTargetMethod() =>
-        PatchInstaller.Target(typeof(LocationLifecycleService), nameof(LocationLifecycleService.StartLocalRaid));
+        PatchInstaller.Target(typeof(LocationLifecycleService), nameof(LocationLifecycleService.StartLocalRaidAsync));
 
+    // StartLocalRaidAsync is async: a postfix runs when it returns its task, not when the raid data is ready.
+    // So the task is replaced by one that waits for SPT's and then does our part.
     [PatchPostfix]
-    public static void Postfix(MongoId __0, StartLocalRaidRequestData __1, StartLocalRaidResponseData __result)
+    public static void Postfix(MongoId __0, StartLocalRaidRequestData __1, ref Task<StartLocalRaidResponseData> __result)
     {
-        var sessionId = __0;
-        var request = __1;
-        var manager = SessionManager.Instance;
-        var session = manager?.Get(sessionId.ToString());
-        if (manager is null || session is null)
+        if (SessionManager.Instance?.Get(__0.ToString()) is null || __result is null)
         {
             return;
         }
 
-        var mapKey = manager.MapKeyFor(request?.Location);
-        lock (session)
+        __result = After(__result, __0, __1);
+    }
+
+    private static async Task<StartLocalRaidResponseData> After(Task<StartLocalRaidResponseData> original, MongoId sessionId,
+        StartLocalRaidRequestData request)
+    {
+        var result = await original.ConfigureAwait(false);
+        try
         {
-            session.OnRaidStart(mapKey);
+            var manager = SessionManager.Instance;
+            var session = manager?.Get(sessionId.ToString());
+            if (manager is null || session is null)
+            {
+                return result;
+            }
+
+            var mapKey = manager.MapKeyFor(request?.Location);
+            lock (session)
+            {
+                session.OnRaidStart(mapKey);
+            }
+
+            var locked = manager.LockedMaps(sessionId.ToString());
+            if (locked is { Count: > 0 } && result?.LocationLoot is not null)
+            {
+                // Copy before editing: other mods (Fika co-op) can share one location object between players.
+                result.LocationLoot = result.LocationLoot with
+                {
+                    Transits = LocationListPatch.DisableTransits(result.LocationLoot.Transits, manager, locked),
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            SessionManager.Instance?.LogError($"raid start: {ex}");
         }
 
-        var locked = manager.LockedMaps(sessionId.ToString());
-        if (locked is { Count: > 0 } && __result?.LocationLoot is not null)
-        {
-            // Copy before editing: other mods (Fika co-op) can share one location object between players.
-            __result.LocationLoot = __result.LocationLoot with
-            {
-                Transits = LocationListPatch.DisableTransits(__result.LocationLoot.Transits, manager, locked),
-            };
-        }
+        return result;
     }
 }
 
@@ -222,7 +241,7 @@ public class RaidStartPatch : AbstractPatch
 public class RaidEndPatch : AbstractPatch
 {
     protected override MethodBase? GetTargetMethod() =>
-        PatchInstaller.Target(typeof(LocationLifecycleService), nameof(LocationLifecycleService.EndLocalRaid));
+        PatchInstaller.Target(typeof(LocationLifecycleService), nameof(LocationLifecycleService.EndLocalRaidAsync));
 
     internal static (string? MapKey, bool IsPmc) ParseServerId(SessionManager manager, string? serverId)
     {
@@ -233,26 +252,26 @@ public class RaidEndPatch : AbstractPatch
         return (mapKey, isPmc);
     }
 
+    /// <summary>
+    /// Runs before SPT copies the client's profile in. The session stays "in raid" until the raid end has finished,
+    /// so no Archipelago item changes the profile in between (they wait, as they do during a raid).
+    /// </summary>
     [PatchPrefix]
-    public static void Prefix(MongoId __0, EndLocalRaidRequestData __1, ref ApSession? __state)
+    public static void Prefix(MongoId __0, EndLocalRaidRequestData __1)
     {
-        var sessionId = __0;
-        var request = __1;
-        // Held until the finalizer: no Archipelago item may change the profile while SPT copies the raid result in.
-        __state = SessionLock.Enter(sessionId, typeof(RaidEndPatch));
         try
         {
             var manager = SessionManager.Instance;
-            var session = manager?.Get(sessionId.ToString());
-            if (manager is null || session is null || request?.Results?.Profile is null)
+            var session = manager?.Get(__0.ToString());
+            if (manager is null || session is null || __1?.Results?.Profile is null)
             {
                 return;
             }
 
-            var (_, isPmc) = ParseServerId(manager, request.ServerId);
+            var (_, isPmc) = ParseServerId(manager, __1.ServerId);
             lock (session)
             {
-                session.BeforeRaidEnd(request.Results.Profile, isPmc);
+                session.BeforeRaidEnd(__1.Results.Profile, isPmc);
             }
         }
         catch (Exception ex)
@@ -262,10 +281,19 @@ public class RaidEndPatch : AbstractPatch
     }
 
     [PatchPostfix]
-    public static void Postfix(MongoId __0, EndLocalRaidRequestData __1)
+    public static void Postfix(MongoId __0, EndLocalRaidRequestData __1, ref Task __result)
     {
-        var sessionId = __0;
-        var request = __1;
+        if (SessionManager.Instance?.Get(__0.ToString()) is null || __result is null)
+        {
+            return;
+        }
+
+        __result = After(__result, __0, __1);
+    }
+
+    private static async Task After(Task original, MongoId sessionId, EndLocalRaidRequestData request)
+    {
+        await original.ConfigureAwait(false);
         try
         {
             var manager = SessionManager.Instance;
@@ -287,17 +315,12 @@ public class RaidEndPatch : AbstractPatch
             SessionManager.Instance?.LogError($"raid end: {ex}");
         }
     }
-
-    [PatchFinalizer]
-    public static void Finalizer(ApSession? __state)
-    {
-        SessionLock.Exit(__state, null);
-    }
 }
 
 /// <summary>
-/// client/game/profile/list: the client loads the whole profile. The session lock is held while the
-/// response is built so no Archipelago item lands between "the client saw it" and "forget the pending change".
+/// client/game/profile/list: the client loads the whole profile. SPT 4.1 streams the response after this method
+/// returns, so instead of holding a lock: forget the pending changes now (the client is about to get every
+/// server-side value) and hold back new profile changes for a few seconds while the response is written.
 /// </summary>
 public class ProfileListPatch : AbstractPatch
 {
@@ -305,24 +328,28 @@ public class ProfileListPatch : AbstractPatch
         PatchInstaller.Target(typeof(ProfileCallbacks), nameof(ProfileCallbacks.GetProfileData));
 
     [PatchPrefix]
-    public static void Prefix(MongoId __2, ref ApSession? __state)
+    public static void Prefix(MongoId __2)
     {
         // (url, request, sessionID)
-        __state = SessionLock.Enter(__2, typeof(ProfileListPatch));
         try
         {
-            __state?.BeforeClientLoadsProfiles();
+            var session = SessionManager.Instance?.Get(__2.ToString());
+            if (session is null)
+            {
+                return;
+            }
+
+            lock (session)
+            {
+                session.BeforeClientLoadsProfiles();
+                session.OnClientLoadedProfiles();
+                session.PauseProfileChanges(TimeSpan.FromSeconds(3));
+            }
         }
         catch (Exception ex)
         {
-            SessionManager.Instance?.LogError($"profile list (before): {ex}");
+            SessionManager.Instance?.LogError($"profile list: {ex}");
         }
-    }
-
-    [PatchFinalizer]
-    public static void Finalizer(Exception? __exception, ApSession? __state)
-    {
-        SessionLock.Exit(__state, __exception is null ? s => s.OnClientLoadedProfiles() : null);
     }
 }
 

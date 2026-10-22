@@ -240,7 +240,8 @@ namespace ArchipelagoTarkov.Client
                          && m.GetParameters()[0].ParameterType.IsEnum && m.GetParameters()[1].ParameterType == typeof(float))
                 .FirstOrDefault();
 
-            var notifications = game.GetType("NotificationManagerClass");
+            // EFT 0.16.9.5 (SPT 4.1) has a readable name; older builds had an obfuscated one.
+            var notifications = game.GetType("EFT.Communications.NotificationManager") ?? game.GetType("NotificationManagerClass");
             _notify = SafeMethods(notifications, BindingFlags.Public | BindingFlags.Static,
                     m => m.Name == "DisplayMessageNotification" && m.GetParameters().Length >= 1
                          && m.GetParameters()[0].ParameterType == typeof(string))
